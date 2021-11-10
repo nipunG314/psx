@@ -8,6 +8,9 @@ Cpu init_cpu(char const *bios_filename) {
   Cpu cpu = {0};
   
   cpu.pc = BIOS_START;
+  for(int index = 0; index < 32; index++)
+    cpu.regs[index] = 0xDEADDEAD;
+  cpu.regs[0] = 0x0;
   cpu.inter = init_interconnect(bios_filename);
 
   return cpu;
@@ -15,6 +18,11 @@ Cpu init_cpu(char const *bios_filename) {
 
 uint32_t load_ins(Cpu *cpu, uint32_t addr) {
   return load_inter_ins(&cpu->inter, addr);
+}
+
+void set_reg(Cpu *cpu, uint8_t index, uint32_t value) {
+  cpu->regs[index] = value;
+  cpu->regs[0] = 0x0;
 }
 
 void decode_and_execute(Cpu *cpu, uint32_t ins) {
