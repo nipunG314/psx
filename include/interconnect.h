@@ -8,6 +8,6 @@ typedef struct Interconnect {
 } Interconnect;
 
 Interconnect init_interconnect(char const *bios_filename);
-uint32_t load_ins(Interconnect *inter, uint32_t addr);
+uint32_t load_inter_ins(Interconnect *inter, uint32_t addr);
 
 #endif
