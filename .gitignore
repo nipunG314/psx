@@ -1,0 +1,4 @@
+psx
+*.swp
+src/obj/*
+compile_commands.json
