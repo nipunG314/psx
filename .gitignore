@@ -1,4 +1,5 @@
 psx
 *.swp
+*.BIN
 src/obj/*
 compile_commands.json
