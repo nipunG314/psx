@@ -1,9 +1,10 @@
 #include "cpu.h"
+#include "interconnect.h"
 
 Cpu init_cpu() {
   Cpu cpu = {0};
   
-  cpu.pc = 0xbfc00000;
+  cpu.pc = BIOS_START;
 
   return cpu;
 }

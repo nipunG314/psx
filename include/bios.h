@@ -3,6 +3,7 @@
 #ifndef BIOS_H
 #define BIOS_H
 
+#define BIOS_START 0xBFC00000
 #define BIOS_SIZE 512 * 1024
 
 typedef struct Bios {
@@ -10,6 +11,6 @@ typedef struct Bios {
 } Bios;
 
 Bios init_bios(char const *filename);
-uint32_t load_ins(Bios *bios, uint32_t offset);
+uint32_t load_bios_ins(Bios *bios, uint32_t offset);
 
 #endif
