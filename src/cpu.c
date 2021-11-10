@@ -41,10 +41,21 @@ void op_lui(Cpu *cpu, uint32_t ins) {
   set_reg(cpu, rt, imm << 16);
 }
 
+void op_ori(Cpu *cpu, uint32_t ins) {
+  uint32_t imm = get_imm(ins);
+  uint32_t rs = get_rs(ins);
+  uint32_t rt = get_rt(ins);
+
+  set_reg(cpu, rt, imm | cpu->regs[rs]);
+}
+
 void decode_and_execute(Cpu *cpu, uint32_t ins) {
   switch (get_func(ins)) {
     case 0xF:
       op_lui(cpu, ins);
+      break;
+    case 0xD:
+      op_ori(cpu, ins);
       break;
     default:
       log_trace("ins: 0x%X", get_func(ins));
