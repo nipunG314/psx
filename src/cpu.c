@@ -58,7 +58,7 @@ void op_sw(Cpu *cpu, uint32_t ins) {
   uint32_t rs = get_rs(ins);
   uint32_t rt = get_rt(ins);
 
-  store32(cpu, imm_se + rs, cpu->regs[rt]);
+  store32(cpu, imm_se + cpu->regs[rs], cpu->regs[rt]);
 }
 
 void op_sll(Cpu *cpu, uint32_t ins) {
