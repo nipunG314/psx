@@ -17,8 +17,12 @@ Cpu init_cpu(char const *bios_filename) {
   return cpu;
 }
 
-uint32_t load_ins(Cpu *cpu, uint32_t addr) {
-  return load_inter_ins(&cpu->inter, addr);
+uint32_t load32(Cpu *cpu, uint32_t addr) {
+  return load_inter32(&cpu->inter, addr);
+}
+
+void store32(Cpu *cpu, uint32_t addr, uint32_t val) {
+  store_inter32(&cpu->inter, addr, val);
 }
 
 void set_reg(Cpu *cpu, uint8_t index, uint32_t value) {
@@ -27,7 +31,7 @@ void set_reg(Cpu *cpu, uint8_t index, uint32_t value) {
 }
 
 void run_next_ins(Cpu *cpu) {
-  uint32_t ins = load_ins(cpu, cpu->pc);
+  uint32_t ins = load32(cpu, cpu->pc);
 
   cpu->pc += 4;
 

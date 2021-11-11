@@ -26,7 +26,7 @@ Bios init_bios(char const *filename) {
   return bios;
 }
 
-uint32_t load_bios_ins(Bios *bios, uint32_t offset) {
+uint32_t load_bios32(Bios *bios, uint32_t offset) {
 
   uint32_t b0 = bios->data[offset++]; 
   uint32_t b1 = bios->data[offset++]; 
