@@ -63,7 +63,6 @@ void decode_and_execute(Cpu *cpu, uint32_t ins) {
       break;
     default:
       log_trace("ins_func: 0x%X", get_func(ins));
-      log_error("DecodeError: Unhandled instruction: 0x%X", ins);
-      exit(EXIT_FAILURE);
+      error("DecodeError: Unhandled instruction: 0x%X", ins);
   }
 }
