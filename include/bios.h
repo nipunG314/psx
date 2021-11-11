@@ -1,10 +1,9 @@
 #include <stdint.h>
 
+#include "range.h"
+
 #ifndef BIOS_H
 #define BIOS_H
-
-#define BIOS_START 0xBFC00000
-#define BIOS_SIZE 512 * 1024
 
 typedef struct Bios {
   uint8_t data[BIOS_SIZE];
