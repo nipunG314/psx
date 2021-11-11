@@ -69,6 +69,14 @@ void op_sll(Cpu *cpu, uint32_t ins) {
   set_reg(cpu, rd, cpu->regs[rt] << shift);
 }
 
+void op_addiu(Cpu *cpu, uint32_t ins) {
+  uint32_t imm_se = get_imm_se(ins);
+  uint32_t rs = get_rs(ins);
+  uint32_t rt = get_rt(ins);
+
+  set_reg(cpu, rt, cpu->regs[rs] + imm_se);
+}
+
 void decode_and_execute(Cpu *cpu, uint32_t ins) {
   switch (get_func(ins)) {
     case 0xF:
@@ -89,6 +97,9 @@ void decode_and_execute(Cpu *cpu, uint32_t ins) {
           log_trace("ins_func: 0x%X", get_func(ins));
           error("DecodeError: Unhandled instruction: 0x%X", ins);
       }
+      break;
+    case 0x9:
+      op_addiu(cpu, ins);
       break;
     default:
       log_trace("ins_func: 0x%X", get_func(ins));
