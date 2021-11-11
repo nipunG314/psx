@@ -44,5 +44,9 @@ void store_inter32(Interconnect *inter, uint32_t addr, uint32_t val) {
     }
   }
 
+  offset = range_contains(RAM_SIZE_START, RAM_SIZE_SIZE, addr);
+  if (offset >= 0)
+    return;
+
   error("Unhandled load call. addr: 0x%X, val: 0x%X", addr, val);
 }
