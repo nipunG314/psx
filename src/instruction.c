@@ -19,3 +19,9 @@ uint32_t get_rd(uint32_t ins) {
 uint32_t get_imm(uint32_t ins) {
   return ins & 0xFFFF;
 }
+
+uint32_t get_imm_se(uint32_t ins) {
+  int16_t tmp = ins & 0xFFFF;
+
+  return tmp;
+}

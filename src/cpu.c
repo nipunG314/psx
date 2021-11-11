@@ -53,6 +53,14 @@ void op_ori(Cpu *cpu, uint32_t ins) {
   set_reg(cpu, rt, imm | cpu->regs[rs]);
 }
 
+void op_sw(Cpu *cpu, uint8_t ins) {
+  uint32_t imm_se = get_imm_se(ins);
+  uint32_t rs = get_rs(ins);
+  uint32_t rt = get_rt(ins);
+
+  store32(cpu, imm_se + rs, cpu->regs[rt]);
+}
+
 void decode_and_execute(Cpu *cpu, uint32_t ins) {
   switch (get_func(ins)) {
     case 0xF:
@@ -60,6 +68,9 @@ void decode_and_execute(Cpu *cpu, uint32_t ins) {
       break;
     case 0xD:
       op_ori(cpu, ins);
+      break;
+    case 0x2B:
+      op_sw(cpu, ins);
       break;
     default:
       log_trace("ins_func: 0x%X", get_func(ins));
