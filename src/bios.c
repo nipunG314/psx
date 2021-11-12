@@ -8,7 +8,7 @@ Bios init_bios(char const *filename) {
   FILE * const fp = fopen(filename, "rb");
 
   if (!fp)
-    error("IOError: Could not load BIOS: %s", filename);
+    fatal("IOError: Could not load BIOS: %s", filename);
 
   fseek(fp, 0L, SEEK_END);
   uint64_t count = ftell(fp);
@@ -17,7 +17,7 @@ Bios init_bios(char const *filename) {
   Bios bios = {0};
 
   if (fread(bios.data, sizeof(uint8_t), BIOS_SIZE, fp) != sizeof(uint8_t) * count)
-    error("IOError: Invalid BIOS Size: %s", filename);
+    fatal("IOError: Invalid BIOS Size: %s", filename);
 
   return bios;
 }

@@ -104,7 +104,7 @@ void decode_and_execute(Cpu *cpu, uint32_t ins) {
           break;
         default:
           log_trace("ins_func: 0x%X", get_func(ins));
-          error("DecodeError: Unhandled instruction: 0x%X", ins);
+          fatal("DecodeError: Unhandled instruction: 0x%X", ins);
       }
       break;
     case 0x9:
@@ -115,6 +115,6 @@ void decode_and_execute(Cpu *cpu, uint32_t ins) {
       break;
     default:
       log_trace("ins_func: 0x%X", get_func(ins));
-      error("DecodeError: Unhandled instruction: 0x%X", ins);
+      fatal("DecodeError: Unhandled instruction: 0x%X", ins);
   }
 }
