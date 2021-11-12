@@ -86,6 +86,15 @@ void op_j(Cpu *cpu, uint32_t ins) {
   cpu->pc = (cpu->pc & 0xF0000000) | (imm_jump << 2);
 }
 
+void log_ins(uint32_t ins) {
+  uint32_t func = get_func(ins);
+  log_trace("ins_func: 0x%X", func);
+  if (func == 0x0) {
+    log_trace("ins_sub_func: 0x%X", get_sub_func(ins));
+  }
+  fatal("DecodeError: Unhandled instruction: 0x%X", ins);
+}
+
 void decode_and_execute(Cpu *cpu, uint32_t ins) {
   switch (get_func(ins)) {
     case 0xF:
@@ -103,8 +112,7 @@ void decode_and_execute(Cpu *cpu, uint32_t ins) {
           op_sll(cpu, ins);
           break;
         default:
-          log_trace("ins_func: 0x%X", get_func(ins));
-          fatal("DecodeError: Unhandled instruction: 0x%X", ins);
+          log_ins(ins);
       }
       break;
     case 0x9:
@@ -114,7 +122,6 @@ void decode_and_execute(Cpu *cpu, uint32_t ins) {
       op_j(cpu, ins);
       break;
     default:
-      log_trace("ins_func: 0x%X", get_func(ins));
-      fatal("DecodeError: Unhandled instruction: 0x%X", ins);
+      log_ins(ins);
   }
 }
