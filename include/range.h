@@ -14,6 +14,9 @@
 #define RAM_SIZE_START 0x1F801060
 #define RAM_SIZE_SIZE 4
 
+#define CACHE_CONTROL_START 0xFFFE0130
+#define CACHE_CONTROL_SIZE 4
+
 inline int32_t range_contains(uint32_t start, uint32_t size, Addr addr) {
   if (addr.data >= start && addr.data < start + size)
     return addr.data - start;

@@ -23,7 +23,7 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
   if (offset >= 0)
     return load_bios32(&inter->bios, MAKE_Addr(offset));
 
-  fatal("Unhandled fetch call. Address: 0x%X", addr);
+  fatal("Unhandled load call. Address: 0x%X", addr);
 }
 
 void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
@@ -52,5 +52,9 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
   if (offset >= 0)
     return;
 
-  fatal("Unhandled load call. addr: 0x%X, val: 0x%X", addr, val);
+  offset = range_contains(CACHE_CONTROL_START, CACHE_CONTROL_SIZE, addr);
+  if (offset >= 0)
+    return;
+
+  fatal("Unhandled store call. addr: 0x%X, val: 0x%X", addr, val);
 }
