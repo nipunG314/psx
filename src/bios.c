@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "instruction.h"
 #include "log.h"
 #include "bios.h"
 
@@ -22,12 +23,12 @@ Bios init_bios(char const *filename) {
   return bios;
 }
 
-uint32_t load_bios32(Bios *bios, uint32_t offset) {
+uint32_t load_bios32(Bios *bios, Addr offset) {
 
-  uint32_t b0 = bios->data[offset++]; 
-  uint32_t b1 = bios->data[offset++]; 
-  uint32_t b2 = bios->data[offset++]; 
-  uint32_t b3 = bios->data[offset++]; 
+  uint32_t b0 = bios->data[offset.data++]; 
+  uint32_t b1 = bios->data[offset.data++]; 
+  uint32_t b2 = bios->data[offset.data++]; 
+  uint32_t b3 = bios->data[offset.data++]; 
 
   return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 }

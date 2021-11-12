@@ -10,6 +10,6 @@ typedef struct Bios {
 } Bios;
 
 Bios init_bios(char const *filename);
-uint32_t load_bios32(Bios *bios, uint32_t offset);
+uint32_t load_bios32(Bios *bios, Addr offset);
 
 #endif
