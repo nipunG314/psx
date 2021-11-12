@@ -11,5 +11,6 @@ uint32_t get_rd(uint32_t ins);
 uint32_t get_shift(uint32_t ins);
 uint32_t get_imm(uint32_t ins);
 uint32_t get_imm_se(uint32_t ins);
+uint32_t get_imm_jump(uint32_t ins);
 
 #endif

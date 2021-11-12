@@ -12,6 +12,7 @@ Cpu init_cpu(char const *bios_filename) {
   for(int index = 0; index < 32; index++)
     cpu.regs[index] = 0xDEADDEAD;
   cpu.regs[0] = 0x0;
+  cpu.next_ins = 0x0;
   cpu.inter = init_interconnect(bios_filename);
 
   return cpu;
@@ -31,7 +32,9 @@ void set_reg(Cpu *cpu, uint8_t index, uint32_t value) {
 }
 
 void run_next_ins(Cpu *cpu) {
-  uint32_t ins = load32(cpu, cpu->pc);
+  uint32_t ins = cpu->next_ins;
+
+  cpu->next_ins = load32(cpu, cpu->pc);
 
   cpu->pc += 4;
 
@@ -77,6 +80,12 @@ void op_addiu(Cpu *cpu, uint32_t ins) {
   set_reg(cpu, rt, cpu->regs[rs] + imm_se);
 }
 
+void op_j(Cpu *cpu, uint32_t ins) {
+  uint32_t imm_jump = get_imm_jump(ins);
+
+  cpu->pc = (cpu->pc & 0xF0000000) | (imm_jump << 2);
+}
+
 void decode_and_execute(Cpu *cpu, uint32_t ins) {
   switch (get_func(ins)) {
     case 0xF:
@@ -100,6 +109,9 @@ void decode_and_execute(Cpu *cpu, uint32_t ins) {
       break;
     case 0x9:
       op_addiu(cpu, ins);
+      break;
+    case 0x2:
+      op_j(cpu, ins);
       break;
     default:
       log_trace("ins_func: 0x%X", get_func(ins));

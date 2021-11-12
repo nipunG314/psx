@@ -33,3 +33,7 @@ uint32_t get_imm_se(uint32_t ins) {
 
   return tmp;
 }
+
+uint32_t get_imm_jump(uint32_t ins) {
+  return ins & 0x3FFFFFF;
+}
