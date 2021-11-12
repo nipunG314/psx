@@ -34,14 +34,16 @@ void store_inter32(Interconnect *inter, uint32_t addr, uint32_t val) {
       case 0:
         if (val != 0x1F000000)
           error("Bad Expansion 1: Base Address: 0x%X", val);
+        break;
       case 4:
         if (val != 0x1F802000)
           error("Bad Expansion 2: Base Address: 0x%X", val);
+        break;
       default:
         log_error("Unhandled Write to MEM_CONTROL register");
-        return;
-
     }
+
+    return;
   }
 
   offset = range_contains(RAM_SIZE_START, RAM_SIZE_SIZE, addr);
