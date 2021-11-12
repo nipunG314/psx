@@ -86,6 +86,14 @@ void op_j(Cpu *cpu, uint32_t ins) {
   cpu->pc = (cpu->pc & 0xF0000000) | (imm_jump << 2);
 }
 
+void op_or(Cpu *cpu, uint32_t ins) {
+  uint32_t rs = get_rs(ins);
+  uint32_t rt = get_rt(ins);
+  uint32_t rd = get_rd(ins);
+
+  set_reg(cpu, rd, cpu->regs[rs] | cpu->regs[rt]);
+}
+
 void log_ins(uint32_t ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%X", func);
@@ -110,6 +118,9 @@ void decode_and_execute(Cpu *cpu, uint32_t ins) {
       switch (get_sub_func(ins)) {
         case 0x0:
           op_sll(cpu, ins);
+          break;
+        case 0x25:
+          op_or(cpu, ins);
           break;
         default:
           log_ins(ins);
