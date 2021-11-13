@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "cpu.h"
 #include "log.h"
@@ -6,16 +7,20 @@
 #include "instruction.h"
 
 Ins MAKE_Ins(uint32_t);
+LoadDelaySlot MAKE_LoadDelaySlot(RegIndex, uint32_t);
 
 Cpu init_cpu(char const *bios_filename) {
   Cpu cpu = {0};
   
   cpu.pc = MAKE_Addr(BIOS_START);
-  for(int index = 0; index < 32; index++)
+  for(int index = 0; index < 32; index++) {
     cpu.regs[index] = 0xDEADDEAD;
+    cpu.output_regs[index] = 0xDEADDEAD;
+  }
   cpu.regs[0] = 0x0;
   cpu.sr = 0x0;
   cpu.next_ins = MAKE_Ins(0x0);
+  cpu.load_delay_slot = MAKE_LoadDelaySlot(MAKE_RegIndex(0x0), 0x0); 
   cpu.inter = init_interconnect(bios_filename);
 
   return cpu;
@@ -30,18 +35,29 @@ void store32(Cpu *cpu, Addr addr, uint32_t val) {
 }
 
 void set_reg(Cpu *cpu, RegIndex index, uint32_t value) {
-  cpu->regs[index.data] = value;
-  cpu->regs[0] = 0x0;
+  cpu->output_regs[index.data] = value;
+  cpu->output_regs[0] = 0x0;
 }
 
 void run_next_ins(Cpu *cpu) {
+  // Assign current instruction
   Ins ins = cpu->next_ins;
 
+  // Load next instruction
   cpu->next_ins = MAKE_Ins(load32(cpu, cpu->pc));
 
+  // Increment PC
   cpu->pc = MAKE_Addr(cpu->pc.data + 4);
 
+  // Update out_regs as per load_delay_slot
+  set_reg(cpu, cpu->load_delay_slot.index, cpu->load_delay_slot.val);
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(MAKE_RegIndex(0x0), 0x0);
+
+  // Execute current instruction
   decode_and_execute(cpu, ins);
+
+  // Copy output_regs into regs
+  memcpy(cpu->regs, cpu->output_regs, sizeof cpu->regs);
 }
 
 void branch(Cpu *cpu, uint32_t offset) {

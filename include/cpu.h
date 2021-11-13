@@ -9,8 +9,10 @@
 typedef struct Cpu {
   Addr pc;
   uint32_t regs[32];
+  uint32_t output_regs[32];
   uint32_t sr;
   Ins next_ins;
+  LoadDelaySlot load_delay_slot;
   Interconnect inter;
 } Cpu;
 

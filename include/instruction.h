@@ -15,6 +15,20 @@ DECLARE_TYPE(uint32_t, Ins)
 DECLARE_TYPE(uint8_t, RegIndex)
 DECLARE_TYPE(uint32_t, Addr)
 
+typedef struct LoadDelaySlot {
+  RegIndex index;
+  uint32_t val;
+} LoadDelaySlot;
+
+inline LoadDelaySlot MAKE_LoadDelaySlot(RegIndex index, uint32_t val) {
+  LoadDelaySlot tmp = {
+    .index = index,
+    .val = val,
+  };
+
+  return tmp;
+}
+
 uint32_t get_func(Ins ins);
 uint32_t get_sub_func(Ins ins);
 uint32_t get_cop_func(Ins ins);
