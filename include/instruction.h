@@ -17,6 +17,7 @@ DECLARE_TYPE(uint32_t, Addr)
 
 uint32_t get_func(Ins ins);
 uint32_t get_sub_func(Ins ins);
+uint32_t get_cop_func(Ins ins);
 RegIndex get_rs(Ins ins);
 RegIndex get_rt(Ins ins);
 RegIndex get_rd(Ins ins);

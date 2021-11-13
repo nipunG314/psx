@@ -10,6 +10,10 @@ uint32_t get_sub_func(Ins ins) {
   return ins.data & 0x3F;
 }
 
+uint32_t get_cop_func(Ins ins) {
+  return (ins.data >> 21) & 0x1F;
+}
+
 RegIndex get_rs(Ins ins) {
   return MAKE_RegIndex((ins.data >> 21) & 0x1F);
 }

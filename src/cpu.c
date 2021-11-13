@@ -14,6 +14,7 @@ Cpu init_cpu(char const *bios_filename) {
   for(int index = 0; index < 32; index++)
     cpu.regs[index] = 0xDEADDEAD;
   cpu.regs[0] = 0x0;
+  cpu.sr = 0x0;
   cpu.next_ins = MAKE_Ins(0x0);
   cpu.inter = init_interconnect(bios_filename);
 
@@ -59,6 +60,11 @@ void op_ori(Cpu *cpu, Ins ins) {
 }
 
 void op_sw(Cpu *cpu, Ins ins) {
+  if (cpu->sr & 0x10000) {
+    log_info("Ignoring store32 calls while cache is isolated");
+    return;
+  }
+
   uint32_t imm_se = get_imm_se(ins);
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
@@ -96,11 +102,28 @@ void op_or(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, cpu->regs[rs.data] | cpu->regs[rt.data]);
 }
 
+void op_mtc0(Cpu *cpu, Ins ins) {
+  RegIndex rt = get_rt(ins);
+  uint32_t cop_reg = get_rd(ins).data;
+  uint32_t val = cpu->regs[rt.data];
+
+  switch (cop_reg) {
+    case 12:
+      cpu->sr = val;
+      break;
+    default:
+      fatal("Unhandled cop0 register. RegIndex: %d", cop_reg);
+  }
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%X", func);
   if (func == 0x0) {
     log_trace("ins_sub_func: 0x%X", get_sub_func(ins));
+  }
+  if (func == 0x10) {
+    log_trace("ins_cop_func: 0x%X", get_cop_func(ins));
   }
   fatal("DecodeError: Unhandled instruction: 0x%X", ins);
 }
@@ -133,6 +156,15 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x2:
       op_j(cpu, ins);
+      break;
+    case 0x10:
+      switch (get_cop_func(ins)) {
+        case 0x4:
+          op_mtc0(cpu, ins);
+          break;
+        default:
+          log_ins(ins);
+      }
       break;
     default:
       log_ins(ins);
