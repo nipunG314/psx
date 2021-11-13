@@ -44,6 +44,12 @@ void run_next_ins(Cpu *cpu) {
   decode_and_execute(cpu, ins);
 }
 
+void branch(Cpu *cpu, uint32_t offset) {
+  offset = offset << 2;
+
+  cpu->pc = MAKE_Addr(cpu->pc.data + offset - 4);
+}
+
 void op_lui(Cpu *cpu, Ins ins) {
   uint32_t imm = get_imm(ins);
   RegIndex rt = get_rt(ins);
@@ -116,6 +122,15 @@ void op_mtc0(Cpu *cpu, Ins ins) {
   }
 }
 
+void op_bne(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  uint32_t imm_se = get_imm_se(ins);
+
+  if (cpu->regs[rs.data] != cpu->regs[rt.data])
+    branch(cpu, imm_se);
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%X", func);
@@ -165,6 +180,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
         default:
           log_ins(ins);
       }
+      break;
+    case 0x5:
+      op_bne(cpu, ins);
       break;
     default:
       log_ins(ins);
