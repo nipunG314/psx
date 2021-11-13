@@ -6,6 +6,9 @@
 #include "bios.h"
 
 Bios init_bios(char const *filename) {
+  Bios bios;
+  bios.data = calloc(range(BIOS).size, sizeof(uint8_t));
+
   FILE * const fp = fopen(filename, "rb");
 
   if (!fp)
@@ -15,9 +18,7 @@ Bios init_bios(char const *filename) {
   uint64_t count = ftell(fp);
   rewind(fp);
 
-  Bios bios = {0};
-
-  if (fread(bios.data, sizeof(uint8_t), BIOS_SIZE, fp) != sizeof(uint8_t) * count)
+  if (fread(bios.data, sizeof(uint8_t), range(BIOS).size, fp) != sizeof(uint8_t) * count)
     fatal("IOError: Invalid BIOS Size: %s", filename);
 
   return bios;
@@ -31,4 +32,8 @@ uint32_t load_bios32(Bios *bios, Addr offset) {
   uint32_t b3 = bios->data[offset.data++]; 
 
   return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+}
+
+void destroy_bios(Bios *bios) {
+  free(bios);
 }

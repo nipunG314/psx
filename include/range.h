@@ -5,21 +5,33 @@
 #ifndef RANGE_H
 #define RANGE_H
 
-#define BIOS_START 0xBFC00000
-#define BIOS_SIZE 512 * 1024
+typedef struct Range {
+  uint32_t start;
+  uint32_t size;
+} Range;
 
-#define MEM_CONTROL_START 0x1F801000
-#define MEM_CONTROL_SIZE 36
+typedef enum RangeIndex {
+  BIOS,
+  MEM_CONTROL,
+  RAM_SIZE,
+  CACHE_CONTROL,
+  RANGE_COUNT
+} RangeIndex;
 
-#define RAM_SIZE_START 0x1F801060
-#define RAM_SIZE_SIZE 4
+static Range ranges[RANGE_COUNT] = {
+  [BIOS] = {0xBFC00000, 512 * 1024},
+  [MEM_CONTROL] = {0x1F801000, 36},
+  [RAM_SIZE] = {0x1F801060, 4},
+  [CACHE_CONTROL] = {0xFFFE0130, 4}
+};
 
-#define CACHE_CONTROL_START 0xFFFE0130
-#define CACHE_CONTROL_SIZE 4
+static inline Range range(RangeIndex index) {
+  return ranges[index];
+}
 
-inline int32_t range_contains(uint32_t start, uint32_t size, Addr addr) {
-  if (addr.data >= start && addr.data < start + size)
-    return addr.data - start;
+static inline int32_t range_contains(Range range, Addr addr) {
+  if (addr.data >= range.start && addr.data < range.start + range.size)
+    return addr.data - range.start;
 
   return -1;
 }

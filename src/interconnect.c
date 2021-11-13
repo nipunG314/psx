@@ -4,9 +4,6 @@
 #include "interconnect.h"
 #include "log.h"
 
-int32_t range_contains(uint32_t, uint32_t, Addr);
-Addr MAKE_Addr(uint32_t);
-
 Interconnect init_interconnect(char const *bios_filename) {
   Interconnect inter = {0};
 
@@ -19,7 +16,7 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
   if (addr.data % 4)
     fatal("Unaligned load_inter32 addr: 0x%X", addr);
 
-  int32_t offset = range_contains(BIOS_START, BIOS_SIZE, addr);
+  int32_t offset = range_contains(range(BIOS), addr);
   if (offset >= 0)
     return load_bios32(&inter->bios, MAKE_Addr(offset));
 
@@ -30,7 +27,7 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
   if (addr.data % 4)
     fatal("Unaligned store_inter32 addr: 0x%X", addr);
 
-  int32_t offset = range_contains(MEM_CONTROL_START, MEM_CONTROL_SIZE, addr);
+  int32_t offset = range_contains(range(MEM_CONTROL), addr);
   if (offset >= 0) {
     switch (offset) {
       case 0:
@@ -48,13 +45,17 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
     return;
   }
 
-  offset = range_contains(RAM_SIZE_START, RAM_SIZE_SIZE, addr);
+  offset = range_contains(range(RAM_SIZE), addr);
   if (offset >= 0)
     return;
 
-  offset = range_contains(CACHE_CONTROL_START, CACHE_CONTROL_SIZE, addr);
+  offset = range_contains(range(CACHE_CONTROL), addr);
   if (offset >= 0)
     return;
 
   fatal("Unhandled store call. addr: 0x%X, val: 0x%X", addr, val);
+}
+
+void destroy_interconnect(Interconnect *inter) {
+  destroy_bios(&inter->bios);
 }

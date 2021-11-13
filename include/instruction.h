@@ -6,7 +6,7 @@
 #define DECLARE_TYPE(T, N) typedef struct N {\
   T data;\
 } N;\
-inline N MAKE_##N(T x) {\
+static inline N MAKE_##N(T x) {\
   N val = {x};\
   return val;\
 }
@@ -20,7 +20,7 @@ typedef struct LoadDelaySlot {
   uint32_t val;
 } LoadDelaySlot;
 
-inline LoadDelaySlot MAKE_LoadDelaySlot(RegIndex index, uint32_t val) {
+static inline LoadDelaySlot MAKE_LoadDelaySlot(RegIndex index, uint32_t val) {
   LoadDelaySlot tmp = {
     .index = index,
     .val = val,

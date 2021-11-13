@@ -22,5 +22,6 @@ void store32(Cpu *cpu, Addr addr, uint32_t val);
 void set_reg(Cpu *cpu, RegIndex index, uint32_t value);
 void decode_and_execute(Cpu *cpu, Ins ins);
 void run_next_ins(Cpu *cpu);
+void destroy_cpu(Cpu *cpu);
 
 #endif

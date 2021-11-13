@@ -8,5 +8,7 @@ int main(void) {
     run_next_ins(&cpu);
   }
 
+  destroy_cpu(&cpu);
+
   return 0;
 }

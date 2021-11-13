@@ -1,7 +1,5 @@
 #include "instruction.h"
 
-RegIndex MAKE_RegIndex(uint8_t);
-
 uint32_t get_func(Ins ins) {
   return ins.data >> 26;
 }

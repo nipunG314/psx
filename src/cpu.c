@@ -6,13 +6,10 @@
 #include "interconnect.h"
 #include "instruction.h"
 
-Ins MAKE_Ins(uint32_t);
-LoadDelaySlot MAKE_LoadDelaySlot(RegIndex, uint32_t);
-
 Cpu init_cpu(char const *bios_filename) {
   Cpu cpu = {0};
   
-  cpu.pc = MAKE_Addr(BIOS_START);
+  cpu.pc = MAKE_Addr(range(BIOS).start);
   for(int index = 0; index < 32; index++) {
     cpu.regs[index] = 0xDEADDEAD;
     cpu.output_regs[index] = 0xDEADDEAD;
@@ -235,4 +232,8 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
     default:
       log_ins(ins);
   }
+}
+
+void destroy_cpu(Cpu *cpu) {
+  destroy_interconnect(&cpu->inter);
 }

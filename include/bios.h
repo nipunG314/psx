@@ -6,10 +6,11 @@
 #define BIOS_H
 
 typedef struct Bios {
-  uint8_t data[BIOS_SIZE];
+  uint8_t *data;
 } Bios;
 
 Bios init_bios(char const *filename);
 uint32_t load_bios32(Bios *bios, Addr offset);
+void destroy_bios(Bios *bios);
 
 #endif
