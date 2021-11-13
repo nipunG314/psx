@@ -94,6 +94,19 @@ void op_addiu(Cpu *cpu, Ins ins) {
   set_reg(cpu, rt, cpu->regs[rs.data] + imm_se);
 }
 
+void op_addi(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  int32_t imm_se = get_imm_se(ins);
+  int32_t reg_s = cpu->regs[rs.data];
+
+  if (reg_s >= 0 && imm_se > INT32_MAX - reg_s) {
+    fatal("Unhandled Exception: Signed overflow");  
+  }
+
+  set_reg(cpu, rt, imm_se + reg_s);
+}
+
 void op_j(Cpu *cpu, Ins ins) {
   uint32_t imm_jump = get_imm_jump(ins);
 
@@ -183,6 +196,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x5:
       op_bne(cpu, ins);
+      break;
+    case 0x8:
+      op_addi(cpu, ins);
       break;
     default:
       log_ins(ins);
