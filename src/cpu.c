@@ -160,6 +160,19 @@ void op_bne(Cpu *cpu, Ins ins) {
     branch(cpu, imm_se);
 }
 
+void op_lw(Cpu *cpu, Ins ins) {
+  if (cpu->sr & 0x10000) {
+    log_info("Ignoring load32 calls while cache is isolated");
+    return;
+  }
+
+  uint32_t imm_se = get_imm_se(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load32(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se)));
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%X", func);
@@ -215,6 +228,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x8:
       op_addi(cpu, ins);
+      break;
+    case 0x23:
+      op_lw(cpu, ins);
       break;
     default:
       log_ins(ins);
