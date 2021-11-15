@@ -1,4 +1,5 @@
 psx
+psx_test
 *.swp
 *.BIN
 compile_commands.json
