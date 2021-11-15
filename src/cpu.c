@@ -136,7 +136,7 @@ void op_or(Cpu *cpu, Ins ins) {
 
 void op_mtc0(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
-  uint32_t cop_reg = get_rd(ins).data;
+  uint8_t cop_reg = get_cop_reg(ins);
   uint32_t val = cpu->regs[rt.data];
 
   switch (cop_reg) {

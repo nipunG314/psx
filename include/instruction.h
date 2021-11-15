@@ -39,5 +39,6 @@ uint32_t get_shift(Ins ins);
 uint32_t get_imm(Ins ins);
 uint32_t get_imm_se(Ins ins);
 uint32_t get_imm_jump(Ins ins);
+uint8_t get_cop_reg(Ins ins);
 
 #endif

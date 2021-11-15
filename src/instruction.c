@@ -41,3 +41,7 @@ uint32_t get_imm_se(Ins ins) {
 uint32_t get_imm_jump(Ins ins) {
   return ins.data & 0x3FFFFFF;
 }
+
+uint8_t get_cop_reg(Ins ins) {
+  return get_rd(ins).data;
+}
