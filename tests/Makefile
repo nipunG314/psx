@@ -1,0 +1,33 @@
+TEST_INCLUDE=include
+TEST_SRC=src
+TEST_OBJ=$(TEST_SRC)/obj
+
+TEST_CFLAGS=-I$(TEST_INCLUDE) -I../$(TEST_INCLUDE) -Wall -pedantic -g
+TEST_OBJ_CFLAGS=$(TEST_CFLAGS) -MMD
+
+TEST_SOURCES:=$(shell find $(TEST_SRC) -name 'unity.c')
+ASM_SOURCES:=$(shell find $(TEST_SRC) -name 'test_assembler.c')
+
+_TEST_OBJECTS=$(TEST_SOURCES:.c=.o)
+TEST_OBJECTS=$(patsubst $(TEST_SRC)%,$(TEST_OBJ)%,$(_TEST_OBJECTS)) $(patsubst %, ../%, $(OBJECTS))
+_ASM_OBJECTS=$(ASM_SOURCES:.c=.o)
+ASM_OBJECTS=$(patsubst $(TEST_SRC)%,$(TEST_OBJ)%,$(_ASM_OBJECTS)) $(patsubst %, ../%, $(OBJECTS))
+
+$(TEST_OBJ)/%.o: $(TEST_SRC)/%.c
+	$(CC) -c -o $@ $< $(TEST_OBJ_CFLAGS)
+
+psx_test: $(TEST_SRC)/../main.c $(TEST_OBJECTS)
+	$(CC) -o $@ $^ $(TEST_CFLAGS)
+
+build_tests: $(TEST_SRC)/../build_tests.c $(ASM_OBJECTS)
+	$(CC) -o $@ $^ $(TEST_CFLAGS)
+
+all: psx_test build_tests
+
+.PHONY: clean tests
+
+clean:
+	rm -rf $(TEST_OBJ)/* psx_test
+
+test: psx_test
+	./psx_test
