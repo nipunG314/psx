@@ -19,15 +19,16 @@ $(TEST_OBJ)/%.o: $(TEST_SRC)/%.c
 psx_test: $(TEST_SRC)/../main.c $(TEST_OBJECTS)
 	$(CC) -o $@ $^ $(TEST_CFLAGS)
 
-build_tests: $(TEST_SRC)/../build_tests.c $(ASM_OBJECTS)
+test_assembler: $(TEST_SRC)/../test_assembler.c $(ASM_OBJECTS)
 	$(CC) -o $@ $^ $(TEST_CFLAGS)
 
-all: psx_test build_tests
+all: psx_test test_assembler
 
 .PHONY: clean tests
 
 clean:
-	rm -rf $(TEST_OBJ)/* psx_test
+	rm -rf $(TEST_OBJ)/* psx_test asm_tests/*.bin
 
-test: psx_test
+test: psx_test test_assembler
+	./test_assembler
 	./psx_test

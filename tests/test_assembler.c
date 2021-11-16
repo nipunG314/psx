@@ -2,9 +2,11 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <dirent.h>
 
 #include "log.h"
-#include "test_assembler.h"
+
+typedef struct dirent dirent;
 
 char * fgetline(char * s, size_t num, FILE * stream) {
   s[0] = 0;
@@ -94,4 +96,37 @@ void assemble_test(char const* input, char const* output) {
 
   fclose(fp_input);
   fclose(fp_output);
+}
+
+int main(void) {
+  dirent *dir_entry;
+  DIR * const dir = opendir("asm_tests");
+
+  if (dir) {
+    while ((dir_entry = readdir(dir))) {
+      if (dir_entry->d_type == DT_REG) {
+        char *ptr = strstr(dir_entry->d_name, ".asm");
+
+        if (ptr) {
+          size_t filename_length = strlen(dir_entry->d_name) + 10;
+          char input_file[filename_length + 1];
+          char output_file[filename_length + 1];
+          strncpy(input_file, "asm_tests/", 11);
+          strncpy(input_file + 10, dir_entry->d_name, filename_length - 10);
+          strncpy(output_file, "asm_tests/", 11);
+          strncpy(output_file + 10, dir_entry->d_name, filename_length - 10);
+          input_file[filename_length] = output_file[filename_length] = 0;
+
+          size_t index = filename_length - 3;
+          output_file[index++] = 'b';
+          output_file[index++] = 'i';
+          output_file[index++] = 'n';
+
+          assemble_test(input_file, output_file);
+        }
+      }
+    }
+  }
+
+  return 0;
 }
