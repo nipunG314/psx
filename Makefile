@@ -21,8 +21,12 @@ $(OBJ)/%.o: $(SRC)/%.c
 -include $(DEPS)   # include all dep files in the makefile
 
 psx: $(SRC)/../main.c $(OBJECTS)
-	$(MAKE) all -C tests
 	$(CC) -o $@ $^ $(CFLAGS)
+
+tests: psx
+	$(MAKE) all -C tests
+
+all: psx tests
 
 .PHONY: run test clean
 
