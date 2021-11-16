@@ -40,18 +40,8 @@ void tokenize_line(char **tokens, size_t token_count, char *line) {
   }
 }
 
-uint32_t convert_le(uint32_t hex) {
-  uint32_t b0 = hex & 0xFF;
-  uint32_t b1 = (hex & 0xFF00) >> 8;
-  uint32_t b2 = (hex & 0xFF0000) >> 16;
-  uint32_t b3 = (hex & 0xFF000000) >> 24;
-
-  return b3 | (b2 << 8) | (b1 << 16) | (b0 << 24);
-}
-
 void assemble_tokens(char **tokens, size_t token_count, FILE * const fp_output) {
   uint32_t ins;
-  uint32_t ins_le;
 
   if (strcmp(tokens[0], "j") == 0) {
     uint32_t imm_jump = (strtol(tokens[1], 0, 0) >> 2) & 0x03FFFFFF;
@@ -64,8 +54,7 @@ void assemble_tokens(char **tokens, size_t token_count, FILE * const fp_output) 
     fatal("AssemblerError: Could not match test instruction. Instruction Token: %s", tokens[0]);
   }
 
-  ins_le = convert_le(ins);
-  fwrite(&ins_le, sizeof ins_le, 1, fp_output);
+  fwrite(&ins, sizeof ins, 1, fp_output);
 }
 
 void assemble_test(char const* input, char const* output) {
