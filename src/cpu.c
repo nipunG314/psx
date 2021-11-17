@@ -130,6 +130,12 @@ void op_j(Cpu *cpu, Ins ins) {
   cpu->pc = MAKE_Addr((cpu->pc.data & 0xF0000000) | (imm_jump << 2));
 }
 
+void op_jal(Cpu *cpu, Ins ins) {
+  set_reg(cpu, MAKE_RegIndex(0x31), cpu->pc.data);
+
+  op_j(cpu, ins);
+}
+
 void op_or(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
@@ -320,6 +326,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x29:
       op_sh(cpu, ins);
+      break;
+    case 0x3:
+      op_jal(cpu, ins);
       break;
     default:
       log_ins(ins);
