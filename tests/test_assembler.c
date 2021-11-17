@@ -50,6 +50,21 @@ void assemble_tokens(char **tokens, size_t token_count, FILE * const fp_output) 
     uint32_t rt = strtol(tokens[1], 0, 0) << 16; 
     uint32_t imm = strtol(tokens[2], 0, 0);
     ins = rt | imm | 0x3C000000;
+  } else if (strcmp(tokens[0], "lw") == 0) {
+    uint32_t rt = strtol(tokens[1], 0, 0) << 16;
+    uint32_t rs = strtol(tokens[2], 0, 0) << 21;
+    uint32_t imm_se = strtol(tokens[3], 0, 0) & 0xFFFF;
+    ins = rs | rt | imm_se | 0x8C000000; 
+  } else if (strcmp(tokens[0], "addu") == 0) {
+    uint32_t rd = strtol(tokens[1], 0, 0) << 11;
+    uint32_t rt = strtol(tokens[2], 0, 0) << 16;
+    uint32_t rs = strtol(tokens[3], 0, 0) << 21;
+    ins = rs | rt | rd | 0x03000021;
+  } else if (strcmp(tokens[0], "addiu") == 0) {
+    uint32_t rs = strtol(tokens[1], 0, 0) << 21;
+    uint32_t rt = strtol(tokens[2], 0, 0) << 16;
+    uint32_t imm_se = strtol(tokens[3], 0, 0) & 0xFFFF;
+    ins = rs | rt | imm_se | 0x24000000; 
   } else {
     fatal("AssemblerError: Could not match test instruction. Instruction Token: %s", tokens[0]);
   }
