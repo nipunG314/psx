@@ -278,6 +278,10 @@ void op_sb(Cpu *cpu, Ins ins) {
   store8(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se), cpu->regs[rt.data]);
 }
 
+void op_jr(Cpu *cpu, Ins ins) {
+  cpu->pc = MAKE_Addr(cpu->regs[get_rs(ins).data]);
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%X", func);
@@ -323,6 +327,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x21:
           op_addu(cpu, ins);
+          break;
+        case 0x8:
+          op_jr(cpu, ins);
           break;
         default:
           log_ins(ins);
