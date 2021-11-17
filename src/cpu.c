@@ -31,6 +31,10 @@ void store32(Cpu *cpu, Addr addr, uint32_t val) {
   store_inter32(&cpu->inter, addr, val);
 }
 
+void store16(Cpu *cpu, Addr addr, uint32_t val) {
+  store_inter16(&cpu->inter, addr, val);
+}
+
 void set_reg(Cpu *cpu, RegIndex index, uint32_t value) {
   cpu->output_regs[index.data] = value;
   cpu->output_regs[0] = 0x0;
@@ -230,6 +234,19 @@ void op_addu(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, cpu->regs[rs.data] + cpu->regs[rt.data]);
 }
 
+void op_sh(Cpu *cpu, Ins ins) {
+  if (cpu->sr & 0x10000) {
+    log_info("Ignoring store16 calls while cache is isolated");
+    return;
+  }
+
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  uint32_t imm_se = get_imm_se(ins);
+
+  store16(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se), cpu->regs[rt.data]);
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%X", func);
@@ -300,6 +317,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x23:
       op_lw(cpu, ins);
+      break;
+    case 0x29:
+      op_sh(cpu, ins);
       break;
     default:
       log_ins(ins);

@@ -78,14 +78,33 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
   }
 
   offset = range_contains(range(RAM_SIZE), addr);
-  if (offset >= 0)
+  if (offset >= 0) {
+    log_error("Unhandled Write to RAM_SIZE register");
     return;
+  }
 
   offset = range_contains(range(CACHE_CONTROL), addr);
-  if (offset >= 0)
+  if (offset >= 0) {
+    log_error("Unhandled Write to CACHE_CONTROL register");
     return;
+  }
 
-  fatal("Unhandled store call. addr: 0x%X, val: 0x%X", addr, val);
+  fatal("Unhandled store32 call. addr: 0x%X, val: 0x%X", addr, val);
+}
+
+void store_inter16(Interconnect *inter, Addr addr, uint32_t val) {
+  if (addr.data % 2)
+    fatal("Unaligned store_inter16 addr: 0x%X", addr);
+
+  addr = mask_region(addr);
+
+  int32_t offset = range_contains(range(SPU), addr);
+  if (offset >= 0) {
+    log_error("Unhandled Write to SPU registers");
+    return;
+  }
+
+  fatal("Unhandled store16 call. addr: 0x%X, val: 0x%X", addr, val);
 }
 
 void destroy_interconnect(Interconnect *inter) {
