@@ -35,6 +35,10 @@ void store16(Cpu *cpu, Addr addr, uint32_t val) {
   store_inter16(&cpu->inter, addr, val);
 }
 
+void store8(Cpu *cpu, Addr addr, uint32_t val) {
+  store_inter8(&cpu->inter, addr, val);
+}
+
 void set_reg(Cpu *cpu, RegIndex index, uint32_t value) {
   cpu->output_regs[index.data] = value;
   cpu->output_regs[0] = 0x0;
@@ -80,6 +84,14 @@ void op_ori(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
 
   set_reg(cpu, rt, imm | cpu->regs[rs.data]);
+}
+
+void op_andi(Cpu *cpu, Ins ins) {
+  uint32_t imm = get_imm(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+
+  set_reg(cpu, rt, imm & cpu->regs[rs.data]);
 }
 
 void op_sw(Cpu *cpu, Ins ins) {
@@ -253,6 +265,19 @@ void op_sh(Cpu *cpu, Ins ins) {
   store16(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se), cpu->regs[rt.data]);
 }
 
+void op_sb(Cpu *cpu, Ins ins) {
+  if (cpu->sr & 0x10000) {
+    log_info("Ignoring store16 calls while cache is isolated");
+    return;
+  }
+
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  uint32_t imm_se = get_imm_se(ins);
+
+  store8(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se), cpu->regs[rt.data]);
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%X", func);
@@ -269,6 +294,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
   switch (get_func(ins)) {
     case 0xF:
       op_lui(cpu, ins);
+      break;
+    case 0xC:
+      op_andi(cpu, ins);
       break;
     case 0xD:
       op_ori(cpu, ins);
@@ -326,6 +354,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x29:
       op_sh(cpu, ins);
+      break;
+    case 0x28:
+      op_sb(cpu, ins);
       break;
     case 0x3:
       op_jal(cpu, ins);

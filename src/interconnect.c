@@ -107,6 +107,18 @@ void store_inter16(Interconnect *inter, Addr addr, uint32_t val) {
   fatal("Unhandled store16 call. addr: 0x%X, val: 0x%X", addr, val);
 }
 
+void store_inter8(Interconnect *inter, Addr addr, uint32_t val) {
+  addr = mask_region(addr);
+
+  int32_t offset = range_contains(range(EXPANSION2), addr);
+  if (offset >= 0) {
+    log_error("Unhandled Write to EXPANSION2 registers");
+    return;
+  }
+
+  fatal("Unhandled store8 call. addr: 0x%X, val: 0x%X", addr, val);
+}
+
 void destroy_interconnect(Interconnect *inter) {
   destroy_bios(&inter->bios);
   destroy_ram(&inter->ram);
