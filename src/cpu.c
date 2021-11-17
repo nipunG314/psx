@@ -185,6 +185,30 @@ void op_lw(Cpu *cpu, Ins ins) {
   cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load32(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se)));
 }
 
+void op_sltu(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+
+  if (cpu->regs[rs.data] < cpu->regs[rt.data])
+    set_reg(cpu, rd, 0x1);
+  else
+    set_reg(cpu, rd, 0x0);
+}
+
+void op_slt(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+  int32_t reg_s = cpu->regs[rs.data];
+  int32_t reg_t = cpu->regs[rt.data];
+
+  if (reg_s < reg_t)
+    set_reg(cpu, rd, 0x1);
+  else
+    set_reg(cpu, rd, 0x0);
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%X", func);
@@ -215,6 +239,12 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x25:
           op_or(cpu, ins);
+          break;
+        case 0x2A:
+          op_slt(cpu, ins);
+          break;
+        case 0x2B:
+          op_sltu(cpu, ins);
           break;
         default:
           log_ins(ins);
