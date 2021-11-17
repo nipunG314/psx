@@ -140,8 +140,23 @@ void op_mtc0(Cpu *cpu, Ins ins) {
   uint32_t val = cpu->regs[rt.data];
 
   switch (cop_reg) {
+    case 3:
+    case 5:
+    case 6:
+    case 7:
+    case 9:
+    case 11:
+      if (val != 0) {
+        fatal("Unhandled write to cop0 register. RegIndex: %d, Val: %d", cop_reg, val);
+      }
+      break;
     case 12:
       cpu->sr = val;
+      break;
+    case 13:
+      if (val != 0) {
+        fatal("Unhandled write to CAUSE register. Val: %d", val);
+      }
       break;
     default:
       fatal("Unhandled cop0 register. RegIndex: %d", cop_reg);
