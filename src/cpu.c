@@ -209,6 +209,27 @@ void op_slt(Cpu *cpu, Ins ins) {
     set_reg(cpu, rd, 0x0);
 }
 
+void op_add(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+  int32_t reg_s = cpu->regs[rs.data];
+  int32_t reg_t = cpu->regs[rt.data];
+
+  if (reg_s >= 0 && reg_s > INT32_MAX - reg_t)
+    fatal("Unhandled Exception: Signed Overflow");
+
+  set_reg(cpu, rd, reg_s + reg_t);
+}
+
+void op_addu(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+
+  set_reg(cpu, rd, cpu->regs[rs.data] + cpu->regs[rt.data]);
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%X", func);
@@ -245,6 +266,12 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x2B:
           op_sltu(cpu, ins);
+          break;
+        case 0x20:
+          op_add(cpu, ins);
+          break;
+        case 0x21:
+          op_addu(cpu, ins);
           break;
         default:
           log_ins(ins);
