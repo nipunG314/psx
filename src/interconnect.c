@@ -4,6 +4,23 @@
 #include "interconnect.h"
 #include "log.h"
 
+uint32_t const RegionMask[] = {
+  // KUSEG - 2GB
+  0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+  // KSEG0 - 512MB
+  0x7FFFFFFF,
+  // KSEG1 - 512MB
+  0x1FFFFFFF,
+  // KSEG2 - 1GB
+  0xFFFFFFFF, 0xFFFFFFFF
+};
+
+Addr mask_region(Addr addr) {
+  uint8_t index = addr.data >> 29;
+
+  return MAKE_Addr(addr.data & RegionMask[index]);
+}
+
 Interconnect init_interconnect(char const *bios_filename) {
   Interconnect inter = {0};
 
@@ -16,6 +33,8 @@ Interconnect init_interconnect(char const *bios_filename) {
 uint32_t load_inter32(Interconnect *inter, Addr addr) {
   if (addr.data % 4)
     fatal("Unaligned load_inter32 addr: 0x%X", addr);
+
+  addr = mask_region(addr);
 
   int32_t offset = range_contains(range(BIOS), addr);
   if (offset >= 0)
@@ -31,6 +50,8 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
 void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
   if (addr.data % 4)
     fatal("Unaligned store_inter32 addr: 0x%X", addr);
+
+  addr = mask_region(addr);
 
   int32_t offset = range_contains(range(MEM_CONTROL), addr);
   if (offset >= 0) {

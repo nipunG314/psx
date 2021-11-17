@@ -20,11 +20,11 @@ typedef enum RangeIndex {
 } RangeIndex;
 
 static Range ranges[RANGE_COUNT] = {
-  [BIOS] = {0xBFC00000, 512 * 1024},
+  [BIOS] = {0x1FC00000, 512 * 1024},
   [MEM_CONTROL] = {0x1F801000, 36},
   [RAM_SIZE] = {0x1F801060, 4},
   [CACHE_CONTROL] = {0xFFFE0130, 4},
-  [RAM] = {0xA0000000, 2 * 1024 * 1024}
+  [RAM] = {0x00000000, 2 * 1024 * 1024}
 };
 
 static inline Range range(RangeIndex index) {
