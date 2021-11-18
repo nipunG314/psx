@@ -1,3 +1,5 @@
+.DEFAULT_GOAL:= psx
+
 INCLUDE=include
 SRC=src
 OBJ=$(SRC)/obj
@@ -18,8 +20,8 @@ $(OBJ)/%.o: $(SRC)/%.c
 
 -include $(DEPS)   # include all dep files in the makefile
 
-psx: $(SRC)/main.c $(OBJECTS)
-	$(CC) -o $@ $^ $(CFLAGS)
+psx: $(OBJECTS)
+	$(CC) -o $(SRC)/$@ $^ $(CFLAGS)
 
 .PHONY: clean
 

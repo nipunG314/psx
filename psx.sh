@@ -1,5 +1,5 @@
 #!/bin/bash
+set -x
 
 bear make
-
-./psx "${@:2}"
+./src/psx "$@" 
