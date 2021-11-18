@@ -1,5 +1,3 @@
-export
-
 INCLUDE=include
 SRC=src
 OBJ=$(SRC)/obj
@@ -20,22 +18,10 @@ $(OBJ)/%.o: $(SRC)/%.c
 
 -include $(DEPS)   # include all dep files in the makefile
 
-psx: $(SRC)/../main.c $(OBJECTS)
+psx: $(SRC)/main.c $(OBJECTS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
-tests: psx
-	$(MAKE) all -C tests
-
-all: psx tests
-
-.PHONY: run test clean
-
-run: psx
-	./psx
-
-test:
-	$(MAKE) test -C tests
+.PHONY: clean
 
 clean:
-	rm -f $(OBJ)/* psx
-	$(MAKE) clean -C tests
+	rm -f $(OBJ)/* $(SRC)/psx

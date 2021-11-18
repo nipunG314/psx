@@ -1,7 +1,6 @@
 #include "cpu.h"
 
-int main(void) {
-  
+int main(int argc, char **argv) {
   Cpu cpu = init_cpu("SCPH1001.BIN");
 
   while (1) {

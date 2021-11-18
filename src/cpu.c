@@ -63,6 +63,8 @@ void run_next_ins(Cpu *cpu) {
 
   // Copy output_regs into regs
   memcpy(cpu->regs, cpu->output_regs, sizeof cpu->regs);
+
+  log_trace("PC: 0x%X", cpu->pc);
 }
 
 void branch(Cpu *cpu, uint32_t offset) {
