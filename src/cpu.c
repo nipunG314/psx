@@ -143,7 +143,7 @@ void op_j(Cpu *cpu, Ins ins) {
 }
 
 void op_jal(Cpu *cpu, Ins ins) {
-  set_reg(cpu, MAKE_RegIndex(0x31), cpu->pc.data);
+  set_reg(cpu, MAKE_RegIndex(0x1F), cpu->pc.data);
 
   op_j(cpu, ins);
 }
