@@ -54,6 +54,10 @@ uint8_t load_inter8(Interconnect *inter, Addr addr) {
   if (offset >= 0)
     return load_bios8(&inter->bios, MAKE_Addr(offset));
 
+  offset = range_contains(range(RAM), addr);
+  if (offset >= 0)
+    return load_ram8(&inter->ram, MAKE_Addr(offset));
+
   offset = range_contains(range(EXPANSION1), addr);
   if (offset >= 0)
     return 0xFF;
@@ -124,7 +128,13 @@ void store_inter16(Interconnect *inter, Addr addr, uint16_t val) {
 void store_inter8(Interconnect *inter, Addr addr, uint8_t val) {
   addr = mask_region(addr);
 
-  int32_t offset = range_contains(range(EXPANSION2), addr);
+  int32_t offset = range_contains(range(RAM), addr);
+  if (offset >= 0) {
+    store_ram8(&inter->ram, MAKE_Addr(offset), val);
+    return;
+  }
+
+  offset = range_contains(range(EXPANSION2), addr);
   if (offset >= 0) {
     log_error("Unhandled Write to EXPANSION2 registers");
     return;

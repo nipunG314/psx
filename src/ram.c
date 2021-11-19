@@ -22,6 +22,10 @@ uint32_t load_ram32(Ram *ram, Addr offset) {
   return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 }
 
+uint8_t load_ram8(Ram *ram, Addr offset) {
+  return ram->data[offset.data];
+}
+
 void store_ram32(Ram *ram, Addr offset, uint32_t val) {
 
   uint8_t b0 = val;
@@ -33,6 +37,10 @@ void store_ram32(Ram *ram, Addr offset, uint32_t val) {
   ram->data[offset.data++] = b1; 
   ram->data[offset.data++] = b2; 
   ram->data[offset.data++] = b3; 
+}
+
+void store_ram8(Ram *ram, Addr offset, uint8_t val) {
+  ram->data[offset.data] = val;
 }
 
 void destroy_ram(Ram *ram) {
