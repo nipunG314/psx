@@ -17,6 +17,7 @@ typedef enum RangeIndex {
   CACHE_CONTROL,
   RAM,
   SPU,
+  EXPANSION1,
   EXPANSION2,
   RANGE_COUNT
 } RangeIndex;
@@ -28,6 +29,7 @@ static Range ranges[RANGE_COUNT] = {
   [CACHE_CONTROL] = {0xFFFE0130, 4},
   [RAM] = {0x00000000, 2 * 1024 * 1024},
   [SPU] = {0x1F801C00, 640},
+  [EXPANSION1] = {0x1F000000, 8 * 1024 * 1024},
   [EXPANSION2] = {0x1F802000, 66}
 };
 

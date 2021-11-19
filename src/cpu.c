@@ -207,6 +207,15 @@ void op_mtc0(Cpu *cpu, Ins ins) {
   }
 }
 
+void op_beq(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  uint32_t imm_se = get_imm_se(ins);
+
+  if (cpu->regs[rs.data] == cpu->regs[rt.data])
+    branch(cpu, imm_se);
+}
+
 void op_bne(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
@@ -398,6 +407,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
         default:
           log_ins(ins);
       }
+      break;
+    case 0x4:
+      op_beq(cpu, ins);
       break;
     case 0x5:
       op_bne(cpu, ins);

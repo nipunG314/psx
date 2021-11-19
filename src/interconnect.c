@@ -54,6 +54,10 @@ uint8_t load_inter8(Interconnect *inter, Addr addr) {
   if (offset >= 0)
     return load_bios8(&inter->bios, MAKE_Addr(offset));
 
+  offset = range_contains(range(EXPANSION1), addr);
+  if (offset >= 0)
+    return 0xFF;
+
   fatal("Unhandled load8 call. Address: 0x%08X", addr);
 }
 
