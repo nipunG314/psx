@@ -178,6 +178,14 @@ void op_or(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, cpu->regs[rs.data] | cpu->regs[rt.data]);
 }
 
+void op_and(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+
+  set_reg(cpu, rd, cpu->regs[rs.data] & cpu->regs[rt.data]);
+}
+
 void op_mtc0(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
   uint8_t cop_reg = get_cop_reg(ins);
@@ -385,6 +393,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       switch (get_sub_func(ins)) {
         case 0x0:
           op_sll(cpu, ins);
+          break;
+        case 0x24:
+          op_and(cpu, ins);
           break;
         case 0x25:
           op_or(cpu, ins);
