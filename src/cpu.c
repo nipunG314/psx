@@ -248,6 +248,26 @@ void op_bne(Cpu *cpu, Ins ins) {
     branch(cpu, imm_se);
 }
 
+void op_blez(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  uint32_t imm_se = get_imm_se(ins);
+
+  int32_t reg_s = cpu->regs[rs.data];
+
+  if (reg_s <= 0)
+    branch(cpu, imm_se);
+}
+
+void op_bgtz(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  uint32_t imm_se = get_imm_se(ins);
+
+  int32_t reg_s = cpu->regs[rs.data];
+
+  if (reg_s > 0)
+    branch(cpu, imm_se);
+}
+
 void op_lw(Cpu *cpu, Ins ins) {
   if (cpu->sr & 0x10000) {
     log_info("Ignoring load32 calls while cache is isolated");
@@ -442,6 +462,12 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x5:
       op_bne(cpu, ins);
+      break;
+    case 0x6:
+      op_blez(cpu, ins);
+      break;
+    case 0x7:
+      op_bgtz(cpu, ins);
       break;
     case 0x8:
       op_addi(cpu, ins);
