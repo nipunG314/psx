@@ -480,6 +480,7 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x24:
       op_lbu(cpu, ins);
+      break;
     case 0x29:
       op_sh(cpu, ins);
       break;
