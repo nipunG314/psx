@@ -83,7 +83,7 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
           fatal("Bad Expansion 2: Base Address: 0x%08X", val);
         break;
       default:
-        log_error("Unhandled Write to MEM_CONTROL register");
+        log_error("Unhandled Write to MEM_CONTROL register. addr: 0x%08X. val: 0x%08X", addr, val);
     }
 
     return;
@@ -97,13 +97,19 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
 
   offset = range_contains(range(RAM_SIZE), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to RAM_SIZE register");
+    log_error("Unhandled Write to RAM_SIZE register. addr: 0x%08X. val: 0x%08X", addr, val);
     return;
   }
 
   offset = range_contains(range(CACHE_CONTROL), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to CACHE_CONTROL register");
+    log_error("Unhandled Write to CACHE_CONTROL register. addr: 0x%08X. val: 0x%08X", addr, val);
+    return;
+  }
+
+  offset = range_contains(range(IRQ), addr);
+  if (offset >= 0) {
+    log_error("Unhandled Write to IRQ register. addr: 0x%08X. val: 0x%08X", addr, val);
     return;
   }
 
@@ -118,7 +124,7 @@ void store_inter16(Interconnect *inter, Addr addr, uint16_t val) {
 
   int32_t offset = range_contains(range(SPU), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to SPU registers");
+    log_error("Unhandled Write to SPU registers. addr: 0x%08X. val: 0x%08X", addr, val);
     return;
   }
 
@@ -136,7 +142,7 @@ void store_inter8(Interconnect *inter, Addr addr, uint8_t val) {
 
   offset = range_contains(range(EXPANSION2), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to EXPANSION2 registers");
+    log_error("Unhandled Write to EXPANSION2 registers. addr: 0x%08X. val: 0x%08X", addr, val);
     return;
   }
 
