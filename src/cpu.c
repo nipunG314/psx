@@ -321,10 +321,7 @@ void op_sltu(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
 
-  if (cpu->regs[rs.data] < cpu->regs[rt.data])
-    set_reg(cpu, rd, 0x1);
-  else
-    set_reg(cpu, rd, 0x0);
+  set_reg(cpu, rd, cpu->regs[rs.data] < cpu->regs[rt.data]);
 }
 
 void op_slt(Cpu *cpu, Ins ins) {
@@ -334,10 +331,24 @@ void op_slt(Cpu *cpu, Ins ins) {
   int32_t reg_s = cpu->regs[rs.data];
   int32_t reg_t = cpu->regs[rt.data];
 
-  if (reg_s < reg_t)
-    set_reg(cpu, rd, 0x1);
-  else
-    set_reg(cpu, rd, 0x0);
+  set_reg(cpu, rd, reg_s < reg_t);
+}
+
+void op_slti(Cpu *cpu, Ins ins) {
+  int32_t imm_se = get_imm_se(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  int32_t reg_s = cpu->regs[rs.data];
+
+  set_reg(cpu, rt, reg_s < imm_se);
+}
+
+void op_sltiu(Cpu *cpu, Ins ins) {
+  uint32_t imm_se = get_imm_se(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+
+  set_reg(cpu, rt, cpu->regs[rs.data] < imm_se);
 }
 
 void op_add(Cpu *cpu, Ins ins) {
@@ -425,6 +436,12 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
   switch (get_func(ins)) {
     case 0xF:
       op_lui(cpu, ins);
+      break;
+    case 0xA:
+      op_slti(cpu, ins);
+      break;
+    case 0xB:
+      op_sltiu(cpu, ins);
       break;
     case 0xC:
       op_andi(cpu, ins);
