@@ -33,6 +33,10 @@ uint32_t load_bios32(Bios *bios, Addr offset) {
   return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 }
 
+uint8_t load_bios8(Bios *bios, Addr offset) {
+  return bios->data[offset.data];
+}
+
 void destroy_bios(Bios *bios) {
   free(bios);
 }

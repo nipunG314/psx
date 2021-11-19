@@ -44,7 +44,17 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
   if (offset >= 0)
     return load_ram32(&inter->ram, MAKE_Addr(offset));
 
-  fatal("Unhandled load call. Address: 0x%08X", addr);
+  fatal("Unhandled load32 call. Address: 0x%08X", addr);
+}
+
+uint8_t load_inter8(Interconnect *inter, Addr addr) {
+  addr = mask_region(addr);
+
+  int32_t offset = range_contains(range(BIOS), addr);
+  if (offset >= 0)
+    return load_bios8(&inter->bios, MAKE_Addr(offset));
+
+  fatal("Unhandled load8 call. Address: 0x%08X", addr);
 }
 
 void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
@@ -92,7 +102,7 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
   fatal("Unhandled store32 call. addr: 0x%08X, val: 0x%08X", addr, val);
 }
 
-void store_inter16(Interconnect *inter, Addr addr, uint32_t val) {
+void store_inter16(Interconnect *inter, Addr addr, uint16_t val) {
   if (addr.data % 2)
     fatal("Unaligned store_inter16 addr: 0x%08X", addr);
 
@@ -107,7 +117,7 @@ void store_inter16(Interconnect *inter, Addr addr, uint32_t val) {
   fatal("Unhandled store16 call. addr: 0x%08X, val: 0x%08X", addr, val);
 }
 
-void store_inter8(Interconnect *inter, Addr addr, uint32_t val) {
+void store_inter8(Interconnect *inter, Addr addr, uint8_t val) {
   addr = mask_region(addr);
 
   int32_t offset = range_contains(range(EXPANSION2), addr);

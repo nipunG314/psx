@@ -29,15 +29,19 @@ uint32_t load32(Cpu *cpu, Addr addr) {
   return load_inter32(&cpu->inter, addr);
 }
 
+uint8_t load8(Cpu *cpu, Addr addr) {
+  return load_inter8(&cpu->inter, addr);
+}
+
 void store32(Cpu *cpu, Addr addr, uint32_t val) {
   store_inter32(&cpu->inter, addr, val);
 }
 
-void store16(Cpu *cpu, Addr addr, uint32_t val) {
+void store16(Cpu *cpu, Addr addr, uint16_t val) {
   store_inter16(&cpu->inter, addr, val);
 }
 
-void store8(Cpu *cpu, Addr addr, uint32_t val) {
+void store8(Cpu *cpu, Addr addr, uint8_t val) {
   store_inter8(&cpu->inter, addr, val);
 }
 
@@ -225,6 +229,33 @@ void op_lw(Cpu *cpu, Ins ins) {
   cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load32(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se)));
 }
 
+void op_lb(Cpu *cpu, Ins ins) {
+  if (cpu->sr & 0x10000) {
+    log_info("Ignoring load8 calls while cache is isolated");
+    return;
+  }
+
+  uint32_t imm_se = get_imm_se(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+
+  int8_t data = load8(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se));
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, data);
+}
+
+void op_lbu(Cpu *cpu, Ins ins) {
+  if (cpu->sr & 0x10000) {
+    log_info("Ignoring load8 calls while cache is isolated");
+    return;
+  }
+
+  uint32_t imm_se = get_imm_se(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load8(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se)));
+}
+
 void op_sltu(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
@@ -374,9 +405,14 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
     case 0x8:
       op_addi(cpu, ins);
       break;
+    case 0x20:
+      op_lb(cpu, ins);
+      break;
     case 0x23:
       op_lw(cpu, ins);
       break;
+    case 0x24:
+      op_lbu(cpu, ins);
     case 0x29:
       op_sh(cpu, ins);
       break;
