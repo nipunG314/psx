@@ -391,6 +391,24 @@ void op_jr(Cpu *cpu, Ins ins) {
   cpu->pc = MAKE_Addr(cpu->regs[get_rs(ins).data]);
 }
 
+void op_bxx(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  uint32_t imm_se = get_imm_se(ins);
+  uint8_t flag = get_rd(ins).data;
+
+  int is_bgez = flag & 0x1;
+  int is_link = ((flag >> 1) == 0x8);
+
+  int32_t reg_s = cpu->regs[rs.data];
+
+  if (is_link)
+    set_reg(cpu, MAKE_RegIndex(0x1F), cpu->pc.data);
+
+  if ((is_bgez && (reg_s >= 0)) || (!is_bgez && (reg_s < 0))) {
+    branch(cpu, imm_se);
+  }
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%08X", func);
@@ -467,6 +485,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
         default:
           log_ins(ins);
       }
+      break;
+    case 0x1:
+      op_bxx(cpu, ins);
       break;
     case 0x4:
       op_beq(cpu, ins);
