@@ -27,7 +27,7 @@ static Range ranges[RANGE_COUNT] = {
   [MEM_CONTROL] = {0x1F801000, 36},
   [RAM_SIZE] = {0x1F801060, 4},
   [CACHE_CONTROL] = {0xFFFE0130, 4},
-  [RAM] = {0x00000000, 2 * 1024 * 1024},
+  [RAM] = {0x00000000, 8 * 1024 * 1024},
   [SPU] = {0x1F801C00, 640},
   [EXPANSION1] = {0x1F000000, 8 * 1024 * 1024},
   [EXPANSION2] = {0x1F802000, 66}
@@ -37,9 +37,12 @@ static inline Range range(RangeIndex index) {
   return ranges[index];
 }
 
-static inline int32_t range_contains(Range range, Addr addr) {
-  if (addr.data >= range.start && addr.data < range.start + range.size)
-    return addr.data - range.start;
+static inline int32_t range_contains(Range data_range, Addr addr) {
+  if (addr.data >= data_range.start && addr.data < data_range.start + data_range.size) {
+    if (data_range.start == range(RAM).start)
+      addr = MAKE_Addr(addr.data & 0x1FFFFF);
+    return addr.data - data_range.start;
+  }
 
   return -1;
 }
