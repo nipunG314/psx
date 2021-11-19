@@ -32,7 +32,7 @@ Interconnect init_interconnect(char const *bios_filename) {
 
 uint32_t load_inter32(Interconnect *inter, Addr addr) {
   if (addr.data % 4)
-    fatal("Unaligned load_inter32 addr: 0x%X", addr);
+    fatal("Unaligned load_inter32 addr: 0x%08X", addr);
 
   addr = mask_region(addr);
 
@@ -44,12 +44,12 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
   if (offset >= 0)
     return load_ram32(&inter->ram, MAKE_Addr(offset));
 
-  fatal("Unhandled load call. Address: 0x%X", addr);
+  fatal("Unhandled load call. Address: 0x%08X", addr);
 }
 
 void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
   if (addr.data % 4)
-    fatal("Unaligned store_inter32 addr: 0x%X", addr);
+    fatal("Unaligned store_inter32 addr: 0x%08X", addr);
 
   addr = mask_region(addr);
 
@@ -58,11 +58,11 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
     switch (offset) {
       case 0:
         if (val != 0x1F000000)
-          fatal("Bad Expansion 1: Base Address: 0x%X", val);
+          fatal("Bad Expansion 1: Base Address: 0x%08X", val);
         break;
       case 4:
         if (val != 0x1F802000)
-          fatal("Bad Expansion 2: Base Address: 0x%X", val);
+          fatal("Bad Expansion 2: Base Address: 0x%08X", val);
         break;
       default:
         log_error("Unhandled Write to MEM_CONTROL register");
@@ -89,12 +89,12 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
     return;
   }
 
-  fatal("Unhandled store32 call. addr: 0x%X, val: 0x%X", addr, val);
+  fatal("Unhandled store32 call. addr: 0x%08X, val: 0x%08X", addr, val);
 }
 
 void store_inter16(Interconnect *inter, Addr addr, uint32_t val) {
   if (addr.data % 2)
-    fatal("Unaligned store_inter16 addr: 0x%X", addr);
+    fatal("Unaligned store_inter16 addr: 0x%08X", addr);
 
   addr = mask_region(addr);
 
@@ -104,7 +104,7 @@ void store_inter16(Interconnect *inter, Addr addr, uint32_t val) {
     return;
   }
 
-  fatal("Unhandled store16 call. addr: 0x%X, val: 0x%X", addr, val);
+  fatal("Unhandled store16 call. addr: 0x%08X, val: 0x%08X", addr, val);
 }
 
 void store_inter8(Interconnect *inter, Addr addr, uint32_t val) {
@@ -116,7 +116,7 @@ void store_inter8(Interconnect *inter, Addr addr, uint32_t val) {
     return;
   }
 
-  fatal("Unhandled store8 call. addr: 0x%X, val: 0x%X", addr, val);
+  fatal("Unhandled store8 call. addr: 0x%08X, val: 0x%08X", addr, val);
 }
 
 void destroy_interconnect(Interconnect *inter) {

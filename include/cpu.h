@@ -8,6 +8,7 @@
 
 typedef struct Cpu {
   Addr pc;
+  Addr prev_pc;
   uint32_t regs[32];
   uint32_t output_regs[32];
   uint32_t sr;

@@ -11,6 +11,7 @@ Cpu init_cpu(char const *bios_filename) {
   Cpu cpu = {0};
 
   cpu.pc = MAKE_Addr(range(BIOS).start);
+  cpu.prev_pc = MAKE_Addr(0x0);
   for(int index = 0; index < 32; index++) {
     cpu.regs[index] = 0xDEADDEAD;
     cpu.output_regs[index] = 0xDEADDEAD;
@@ -46,11 +47,15 @@ void set_reg(Cpu *cpu, RegIndex index, uint32_t value) {
 }
 
 void run_next_ins(Cpu *cpu) {
+  if (get_flag(PRINT_PC))
+    log_trace("PC: 0x%08X", cpu->prev_pc);
+
   // Assign current instruction
   Ins ins = cpu->next_ins;
 
   // Load next instruction
   cpu->next_ins = MAKE_Ins(load32(cpu, cpu->pc));
+  cpu->prev_pc = cpu->pc;
 
   // Increment PC
   cpu->pc = MAKE_Addr(cpu->pc.data + 4);
@@ -65,18 +70,16 @@ void run_next_ins(Cpu *cpu) {
   // Copy output_regs into regs
   memcpy(cpu->regs, cpu->output_regs, sizeof cpu->regs);
 
-  if (get_flag(PRINT_PC))
-    log_trace("PC: 0x%X", cpu->pc);
   if (get_flag(PRINT_INS)) {
     uint32_t func = get_func(ins);
-    log_trace("ins_func: 0x%X", func);
+    log_trace("ins_func: 0x%08X", func);
     if (func == 0x0) {
-      log_trace("ins_sub_func: 0x%X", get_sub_func(ins));
+      log_trace("ins_sub_func: 0x%08X", get_sub_func(ins));
     }
     if (func == 0x10) {
-      log_trace("ins_cop_func: 0x%X", get_cop_func(ins));
+      log_trace("ins_cop_func: 0x%08X", get_cop_func(ins));
     }
-    log_trace("Instruction: 0x%X", ins);
+    log_trace("Instruction: 0x%08X", ins);
   }
 }
 
@@ -299,14 +302,14 @@ void op_jr(Cpu *cpu, Ins ins) {
 
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
-  log_trace("ins_func: 0x%X", func);
+  log_trace("ins_func: 0x%08X", func);
   if (func == 0x0) {
-    log_trace("ins_sub_func: 0x%X", get_sub_func(ins));
+    log_trace("ins_sub_func: 0x%08X", get_sub_func(ins));
   }
   if (func == 0x10) {
-    log_trace("ins_cop_func: 0x%X", get_cop_func(ins));
+    log_trace("ins_cop_func: 0x%08X", get_cop_func(ins));
   }
-  fatal("DecodeError: Unhandled instruction: 0x%X", ins);
+  fatal("DecodeError: Unhandled instruction: 0x%08X", ins);
 }
 
 void decode_and_execute(Cpu *cpu, Ins ins) {
