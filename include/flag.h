@@ -10,7 +10,7 @@ typedef enum Flag {
   PRINT_INS = 1 << 1,
 } Flag;
 
-extern FlagSet flag_set;
+FlagSet flag_set;
 
 static inline int get_flag(Flag flag) {
   return flag_set & flag;

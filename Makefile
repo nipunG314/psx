@@ -1,8 +1,10 @@
+export
 .DEFAULT_GOAL:= psx
 
 INCLUDE=include
 SRC=src
 OBJ=$(SRC)/obj
+TESTS=tests
 
 CC=gcc
 CFLAGS=-I$(INCLUDE) -Wall -pedantic -g
@@ -23,7 +25,10 @@ $(OBJ)/%.o: $(SRC)/%.c
 psx: $(OBJECTS)
 	$(CC) -o $(SRC)/$@ $^ $(CFLAGS)
 
-.PHONY: clean
+.PHONY: test clean
+
+test: psx
+	$(MAKE) -C $(TESTS)
 
 clean:
 	rm -f $(OBJ)/* $(SRC)/psx
