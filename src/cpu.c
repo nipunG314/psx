@@ -203,7 +203,22 @@ void op_mtc0(Cpu *cpu, Ins ins) {
       }
       break;
     default:
-      fatal("Unhandled cop0 register. RegIndex: %d", cop_reg);
+      fatal("Unhandled write to cop0 register. RegIndex: %d", cop_reg);
+  }
+}
+
+void op_mfc0(Cpu *cpu, Ins ins) {
+  RegIndex rt = get_rt(ins);
+  uint8_t cop_reg = get_cop_reg(ins);
+
+  switch (cop_reg) {
+    case 12:
+      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, cpu->sr);
+      break;
+    case 13:
+      fatal("Unhandled read from CAUSE register.");
+    default:
+      fatal("Unhandled read from cop0 register. RegIndex: %d", cop_reg);
   }
 }
 
@@ -401,6 +416,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x10:
       switch (get_cop_func(ins)) {
+        case 0x0:
+          op_mfc0(cpu, ins);
+          break;
         case 0x4:
           op_mtc0(cpu, ins);
           break;
