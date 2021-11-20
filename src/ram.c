@@ -22,6 +22,14 @@ uint32_t load_ram32(Ram *ram, Addr offset) {
   return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 }
 
+uint16_t load_ram16(Ram *ram, Addr offset) {
+
+  uint16_t b0 = ram->data[offset.data++];
+  uint16_t b1 = ram->data[offset.data++];
+
+  return b0 | (b1 << 8);
+}
+
 uint8_t load_ram8(Ram *ram, Addr offset) {
   return ram->data[offset.data];
 }

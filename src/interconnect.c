@@ -56,6 +56,22 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
   fatal("Unhandled load32 call. Address: 0x%08X", addr);
 }
 
+uint16_t load_inter16(Interconnect *inter, Addr addr) {
+  addr = mask_region(addr);
+
+  int32_t offset = range_contains(range(RAM), addr);
+  if (offset >= 0)
+    return load_ram16(&inter->ram, MAKE_Addr(offset));
+
+  offset = range_contains(range(SPU), addr);
+  if (offset >= 0) {
+    log_error("Unhandled read from SPU. addr: 0x%08X", addr);
+    return 0;
+  }
+
+  fatal("Unhandled load16 call. Address: 0x%08X", addr);
+}
+
 uint8_t load_inter8(Interconnect *inter, Addr addr) {
   addr = mask_region(addr);
 

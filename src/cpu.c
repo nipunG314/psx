@@ -47,6 +47,10 @@ uint32_t load32(Cpu *cpu, Addr addr) {
   return load_inter32(&cpu->inter, addr);
 }
 
+uint16_t load16(Cpu *cpu, Addr addr) {
+  return load_inter16(&cpu->inter, addr);
+}
+
 uint8_t load8(Cpu *cpu, Addr addr) {
   return load_inter8(&cpu->inter, addr);
 }
@@ -524,6 +528,26 @@ void op_srl(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, cpu->regs[rt.data] >> shift);
 }
 
+void op_lhu(Cpu *cpu, Ins ins) {
+  if (cpu->sr & 0x10000) {
+    log_info("Ignoring load8 calls while cache is isolated");
+    return;
+  }
+
+  uint32_t imm_se = get_imm_se(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+
+  Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
+
+  if (addr.data % 2) {
+    exception(cpu, LoadAddressError);
+    return;
+  }
+
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load16(cpu, addr));
+}
+
 void op_div(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
@@ -717,6 +741,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x24:
       op_lbu(cpu, ins);
+      break;
+    case 0x25:
+      op_lhu(cpu, ins);
       break;
     case 0x29:
       op_sh(cpu, ins);
