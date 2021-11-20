@@ -3,6 +3,7 @@
 
 #include "cpu.h"
 #include "flag.h"
+#include "log.h"
 
 FlagSet flag_set = 0x0;
 
@@ -12,6 +13,8 @@ void set_env(int argc, char **argv) {
       set_flag(PRINT_PC);
     else if (strcmp(argv[i], "--print-ins") == 0)
       set_flag(PRINT_INS);
+    else if (strcmp(argv[i], "--quiet") == 0)
+      log_set_quiet(1);
   }
 }
 
