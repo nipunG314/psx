@@ -263,6 +263,15 @@ void op_mfc0(Cpu *cpu, Ins ins) {
   }
 }
 
+void op_rfe(Cpu *cpu, Ins ins) {
+  if ((ins.data & 0x3F) != 0x10)
+    fatal("Invalid cop0 instruction: 0x%08X", ins);
+
+  uint32_t mode = cpu->sr & 0x3F;
+  cpu->sr = cpu->sr & ~0x3F;
+  cpu->sr = cpu->sr | (mode >> 2);
+}
+
 void op_beq(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
@@ -512,17 +521,27 @@ void op_mflo(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, cpu->lo);
 }
 
+void op_mtlo(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+
+  cpu->lo = cpu->regs[rs.data];
+}
+
 void op_mfhi(Cpu *cpu, Ins ins) {
   RegIndex rd = get_rd(ins);
 
   set_reg(cpu, rd, cpu->hi);
 }
 
+void op_mthi(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+
+  cpu->hi = cpu->regs[rs.data];
+}
+
 void op_syscall(Cpu *cpu, Ins ins) {
   exception(cpu, SysCall);
 }
-
-
 
 void decode_and_execute(Cpu *cpu, Ins ins) {
   switch (get_func(ins)) {
@@ -564,8 +583,14 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
         case 0x10:
           op_mfhi(cpu, ins);
           break;
+        case 0x11:
+          op_mthi(cpu, ins);
+          break;
         case 0x12:
           op_mflo(cpu, ins);
+          break;
+        case 0x13:
+          op_mtlo(cpu, ins);
           break;
         case 0x1A:
           op_div(cpu, ins);
@@ -615,6 +640,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x4:
           op_mtc0(cpu, ins);
+          break;
+        case 0x10:
+          op_rfe(cpu, ins);
           break;
         default:
           log_ins(ins);
