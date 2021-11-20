@@ -11,6 +11,9 @@ static inline N MAKE_##N(T x) {\
   return val;\
 }
 
+extern char const *funcs[];
+extern char const *special_funcs[];
+
 DECLARE_TYPE(uint32_t, Ins)
 DECLARE_TYPE(uint8_t, RegIndex)
 DECLARE_TYPE(uint32_t, Addr)

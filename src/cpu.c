@@ -7,6 +7,19 @@
 #include "instruction.h"
 #include "flag.h"
 
+void log_ins(Ins ins) {
+  uint32_t func = get_func(ins);
+  log_trace("ins_func: 0x%08X %s", func, funcs[func]);
+  if (func == 0x0) {
+    uint32_t sub_func = get_sub_func(ins);
+    log_trace("ins_sub_func: 0x%08X %s", sub_func, special_funcs[sub_func]);
+  }
+  if (func == 0x10) {
+    log_trace("ins_cop_func: 0x%08X", get_cop_func(ins));
+  }
+  log_trace("instruction: 0x%08X", ins.data);
+}
+
 Cpu init_cpu(char const *bios_filename) {
   Cpu cpu = {0};
 
@@ -61,17 +74,8 @@ void run_next_ins(Cpu *cpu) {
   Ins ins = MAKE_Ins(load32(cpu, cpu->pc));
   cpu->current_pc = cpu->pc;
 
-  if (get_flag(PRINT_INS)) {
-    uint32_t func = get_func(ins);
-    log_trace("ins_func: 0x%08X", func);
-    if (func == 0x0) {
-      log_trace("ins_sub_func: 0x%08X", get_sub_func(ins));
-    }
-    if (func == 0x10) {
-      log_trace("ins_cop_func: 0x%08X", get_cop_func(ins));
-    }
-    log_trace("Instruction: 0x%08X", ins);
-  }
+  if (get_flag(PRINT_INS))
+    log_ins(ins);
 
   // Increment PC
   cpu->pc = cpu->next_pc;
@@ -516,17 +520,7 @@ void op_syscall(Cpu *cpu, Ins ins) {
   exception(cpu, SysCall);
 }
 
-void log_ins(Ins ins) {
-  uint32_t func = get_func(ins);
-  log_trace("ins_func: 0x%08X", func);
-  if (func == 0x0) {
-    log_trace("ins_sub_func: 0x%08X", get_sub_func(ins));
-  }
-  if (func == 0x10) {
-    log_trace("ins_cop_func: 0x%08X", get_cop_func(ins));
-  }
-  fatal("DecodeError: Unhandled instruction: 0x%08X", ins);
-}
+
 
 void decode_and_execute(Cpu *cpu, Ins ins) {
   switch (get_func(ins)) {
@@ -603,6 +597,7 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         default:
           log_ins(ins);
+          fatal("DecodeError: Unhandled instruction: 0x%08X", ins);
       }
       break;
     case 0x9:
@@ -621,6 +616,7 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         default:
           log_ins(ins);
+          fatal("DecodeError: Unhandled instruction: 0x%08X", ins);
       }
       break;
     case 0x1:
@@ -661,6 +657,7 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     default:
       log_ins(ins);
+      fatal("DecodeError: Unhandled instruction: 0x%08X", ins);
   }
 }
 

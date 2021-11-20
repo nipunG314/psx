@@ -1,5 +1,27 @@
 #include "instruction.h"
 
+char const *funcs[] = {
+  "", "BcondZ", "J", "JAL", "BEQ", "BNE", "BLEZ", "BGTZ",
+  "ADDI", "ADDIU", "SLTI", "SLTIU", "ANDI", "ORI", "XORI", "LUI",
+  "COP0", "COP1", "COP2", "COP3", "N/A", "N/A", "N/A", "N/A",
+  "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A",
+  "LB", "LH", "LWL", "LW", "LBU", "LHU", "LWR", "N/A",
+  "SB", "SH", "SWL", "SW", "N/A", "N/A", "SWR", "N/A",
+  "LWC0", "LWC1", "LWC2", "LWC3", "N/A", "N/A", "N/A", "N/A",
+  "SWC0", "SWC1", "SWC2", "SWC3", "N/A", "N/A", "N/A", "N/A"
+};
+
+char const *special_funcs[] = {
+  "SLL", "N/A", "SRL", "SRA", "SLLV", "N/A", "SRLV", "SRAV",
+  "JR", "JALR", "N/A", "N/A", "SYSCALL", "BREAK", "N/A", "N/A",
+  "MFHI", "MTHI", "MFLO", "MTLO", "N/A", "N/A", "N/A", "N/A",
+  "MULT", "MULTU", "DIV", "DIVU", "N/A", "N/A", "N/A", "N/A",
+  "ADD", "ADDU", "SUB", "SUBU", "AND", "OR", "XOR", "NOR",
+  "N/A", "N/A", "SLT", "SLTU", "N/A", "N/A", "N/A", "N/A",
+  "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A",
+  "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A"
+};
+
 uint32_t get_func(Ins ins) {
   return ins.data >> 26;
 }
