@@ -432,12 +432,20 @@ void op_subu(Cpu *cpu, Ins ins) {
 void op_sra(Cpu *cpu, Ins ins) {
   uint32_t shift = get_shift(ins);
   RegIndex rt = get_rt(ins);
-  RegIndex rd = get_rt(ins);
+  RegIndex rd = get_rd(ins);
 
   int32_t reg_t = cpu->regs[rt.data];
   reg_t = reg_t >> shift;
 
   set_reg(cpu, rd, reg_t);
+}
+
+void op_srl(Cpu *cpu, Ins ins) {
+  uint32_t shift = get_shift(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+
+  set_reg(cpu, rd, cpu->regs[rt.data] >> shift);
 }
 
 void op_div(Cpu *cpu, Ins ins) {
@@ -500,6 +508,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       switch (get_sub_func(ins)) {
         case 0x0:
           op_sll(cpu, ins);
+          break;
+        case 0x2:
+          op_srl(cpu, ins);
           break;
         case 0x3:
           op_sra(cpu, ins);
