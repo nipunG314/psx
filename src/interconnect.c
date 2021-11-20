@@ -134,6 +134,12 @@ void store_inter16(Interconnect *inter, Addr addr, uint16_t val) {
     return;
   }
 
+  offset = range_contains(range(TIMERS), addr);
+  if (offset >= 0) {
+    log_error("Unhandled Write to TIMER registers. addr: 0x%08X. val: 0x%08X", addr, val);
+    return;
+  }
+
   fatal("Unhandled store16 call. addr: 0x%08X, val: 0x%08X", addr, val);
 }
 

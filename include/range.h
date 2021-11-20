@@ -20,6 +20,7 @@ typedef enum RangeIndex {
   EXPANSION1,
   EXPANSION2,
   IRQ,
+  TIMERS,
   RANGE_COUNT
 } RangeIndex;
 
@@ -32,7 +33,8 @@ static Range ranges[RANGE_COUNT] = {
   [SPU] = {0x1F801C00, 640},
   [EXPANSION1] = {0x1F000000, 8 * 1024 * 1024},
   [EXPANSION2] = {0x1F802000, 66},
-  [IRQ] = {0x1F801070, 8}
+  [IRQ] = {0x1F801070, 8},
+  [TIMERS] = {0x1F801100, 48}
 };
 
 static inline Range range(RangeIndex index) {
