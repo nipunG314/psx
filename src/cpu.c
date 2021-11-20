@@ -23,7 +23,7 @@ void log_ins(Ins ins) {
 Cpu init_cpu(char const *bios_filename) {
   Cpu cpu = {0};
 
-  cpu.pc = MAKE_Addr(range(BIOS).start);
+  cpu.pc = MAKE_Addr(0xBFC00000);
   cpu.next_pc = MAKE_Addr(cpu.pc.data + 4);
   cpu.current_pc = MAKE_Addr(0x0);
   for(int index = 0; index < 32; index++) {
