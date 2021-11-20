@@ -458,6 +458,12 @@ void op_div(Cpu *cpu, Ins ins) {
   }
 }
 
+void op_mflo(Cpu *cpu, Ins ins) {
+  RegIndex rd = get_rd(ins);
+
+  set_reg(cpu, rd, cpu->lo);
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%08X", func);
@@ -500,6 +506,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x9:
           op_jalr(cpu, ins);
+          break;
+        case 0x12:
+          op_mflo(cpu, ins);
           break;
         case 0x1A:
           op_div(cpu, ins);
