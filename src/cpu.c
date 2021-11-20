@@ -428,6 +428,17 @@ void op_subu(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, cpu->regs[rs.data] - cpu->regs[rt.data]);
 }
 
+void op_sra(Cpu *cpu, Ins ins) {
+  uint32_t shift = get_shift(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rt(ins);
+
+  int32_t reg_t = cpu->regs[rt.data];
+  reg_t = reg_t >> shift;
+
+  set_reg(cpu, rd, reg_t);
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%08X", func);
@@ -464,6 +475,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       switch (get_sub_func(ins)) {
         case 0x0:
           op_sll(cpu, ins);
+          break;
+        case 0x3:
+          op_sra(cpu, ins);
           break;
         case 0x9:
           op_jalr(cpu, ins);
