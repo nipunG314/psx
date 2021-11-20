@@ -76,6 +76,11 @@ void run_next_ins(Cpu *cpu) {
   Ins ins = MAKE_Ins(load32(cpu, cpu->pc));
   cpu->current_pc = cpu->pc;
 
+  if (cpu->current_pc.data % 4) {
+    exception(cpu, LoadAddressError);
+    return;
+  }
+
   // Check if in delay_slot
   cpu->delay_slot = cpu->branch;
   cpu->branch = 0;
@@ -159,8 +164,14 @@ void op_sw(Cpu *cpu, Ins ins) {
   uint32_t imm_se = get_imm_se(ins);
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
+  Addr addr = MAKE_Addr(imm_se + cpu->regs[rs.data]);
 
-  store32(cpu, MAKE_Addr(imm_se + cpu->regs[rs.data]), cpu->regs[rt.data]);
+  if (addr.data % 4) {
+    exception(cpu, StoreAddressError);
+    return;
+  }
+
+  store32(cpu, addr, cpu->regs[rt.data]);
 }
 
 void op_sll(Cpu *cpu, Ins ins) {
@@ -186,7 +197,8 @@ void op_addi(Cpu *cpu, Ins ins) {
   int32_t reg_s = cpu->regs[rs.data];
 
   if (reg_s >= 0 && imm_se > INT32_MAX - reg_s) {
-    fatal("Unhandled Exception: Signed overflow");  
+    exception(cpu, Overflow);
+    return;
   }
 
   set_reg(cpu, rt, imm_se + reg_s);
@@ -335,7 +347,13 @@ void op_lw(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
 
-  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load32(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se)));
+  Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
+
+  if (addr.data % 4) {
+    exception(cpu, LoadAddressError);
+  }
+
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load32(cpu, addr));
 }
 
 void op_lb(Cpu *cpu, Ins ins) {
@@ -407,8 +425,10 @@ void op_add(Cpu *cpu, Ins ins) {
   int32_t reg_s = cpu->regs[rs.data];
   int32_t reg_t = cpu->regs[rt.data];
 
-  if (reg_s >= 0 && reg_s > INT32_MAX - reg_t)
-    fatal("Unhandled Exception: Signed Overflow");
+  if (reg_s >= 0 && reg_s > INT32_MAX - reg_t) {
+    exception(cpu, Overflow);
+    return;
+  }
 
   set_reg(cpu, rd, reg_s + reg_t);
 }
@@ -430,8 +450,14 @@ void op_sh(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   uint32_t imm_se = get_imm_se(ins);
+  Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
 
-  store16(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se), cpu->regs[rt.data]);
+  if (addr.data % 2) {
+    exception(cpu, StoreAddressError);
+    return;
+  }
+
+  store16(cpu, addr, cpu->regs[rt.data]);
 }
 
 void op_sb(Cpu *cpu, Ins ins) {

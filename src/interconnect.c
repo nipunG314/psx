@@ -31,9 +31,6 @@ Interconnect init_interconnect(char const *bios_filename) {
 }
 
 uint32_t load_inter32(Interconnect *inter, Addr addr) {
-  if (addr.data % 4)
-    fatal("Unaligned load_inter32 addr: 0x%08X", addr);
-
   addr = mask_region(addr);
 
   int32_t offset = range_contains(range(BIOS), addr);
@@ -72,9 +69,6 @@ uint8_t load_inter8(Interconnect *inter, Addr addr) {
 }
 
 void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
-  if (addr.data % 4)
-    fatal("Unaligned store_inter32 addr: 0x%08X", addr);
-
   addr = mask_region(addr);
 
   int32_t offset = range_contains(range(MEM_CONTROL), addr);
@@ -123,9 +117,6 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
 }
 
 void store_inter16(Interconnect *inter, Addr addr, uint16_t val) {
-  if (addr.data % 2)
-    fatal("Unaligned store_inter16 addr: 0x%08X", addr);
-
   addr = mask_region(addr);
 
   int32_t offset = range_contains(range(RAM), addr);
