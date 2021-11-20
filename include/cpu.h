@@ -12,6 +12,8 @@ typedef struct Cpu {
   uint32_t regs[32];
   uint32_t output_regs[32];
   uint32_t sr;
+  uint32_t hi;
+  uint32_t lo;
   Ins next_ins;
   LoadDelaySlot load_delay_slot;
   Interconnect inter;

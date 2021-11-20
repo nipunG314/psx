@@ -18,6 +18,7 @@ Cpu init_cpu(char const *bios_filename) {
   }
   cpu.regs[0] = 0x0;
   cpu.sr = 0x0;
+  cpu.hi = cpu.lo = 0xDEADDEAD;
   cpu.next_ins = MAKE_Ins(0x0);
   cpu.load_delay_slot = MAKE_LoadDelaySlot(MAKE_RegIndex(0x0), 0x0); 
   cpu.inter = init_interconnect(bios_filename);
@@ -439,6 +440,24 @@ void op_sra(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, reg_t);
 }
 
+void op_div(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  int32_t reg_s = cpu->regs[rs.data];
+  int32_t reg_t = cpu->regs[rt.data];
+
+  if (reg_t == 0) {
+    cpu->hi = reg_s;
+    cpu->lo = (reg_s >= 0) ? 0xFFFFFFFF : 0x1;
+  } else if (reg_s == 0x80000000 && reg_t == 0xFFFFFFFF) {
+    cpu->hi = 0x0;
+    cpu->lo = reg_s;
+  } else {
+    cpu->hi = reg_s % reg_t;
+    cpu->lo = reg_s / reg_t;
+  }
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%08X", func);
@@ -481,6 +500,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x9:
           op_jalr(cpu, ins);
+          break;
+        case 0x1A:
+          op_div(cpu, ins);
           break;
         case 0x24:
           op_and(cpu, ins);
