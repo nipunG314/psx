@@ -186,6 +186,14 @@ void op_sll(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, cpu->regs[rt.data] << shift);
 }
 
+void op_sllv(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+
+  set_reg(cpu, rd, cpu->regs[rt.data] << (cpu->regs[rs.data] & 0x1F));
+}
+
 void op_addiu(Cpu *cpu, Ins ins) {
   uint32_t imm_se = get_imm_se(ins);
   RegIndex rs = get_rs(ins);
@@ -528,6 +536,27 @@ void op_srl(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, cpu->regs[rt.data] >> shift);
 }
 
+void op_lh(Cpu *cpu, Ins ins) {
+  if (cpu->sr & 0x10000) {
+    log_info("Ignoring store16 calls while cache is isolated");
+    return;
+  }
+
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  uint32_t imm_se = get_imm_se(ins);
+  Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
+
+  if (addr.data % 2) {
+    exception(cpu, LoadAddressError);
+    return;
+  }
+
+  int16_t val = load16(cpu, addr); 
+
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, val); 
+}
+
 void op_lhu(Cpu *cpu, Ins ins) {
   if (cpu->sr & 0x10000) {
     log_info("Ignoring load8 calls while cache is isolated");
@@ -640,6 +669,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
         case 0x3:
           op_sra(cpu, ins);
           break;
+        case 0x4:
+          op_sllv(cpu, ins);
+          break;
         case 0x9:
           op_jalr(cpu, ins);
           break;
@@ -735,6 +767,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x20:
       op_lb(cpu, ins);
+      break;
+    case 0x21:
+      op_lh(cpu, ins);
       break;
     case 0x23:
       op_lw(cpu, ins);
