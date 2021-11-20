@@ -420,6 +420,14 @@ void op_bxx(Cpu *cpu, Ins ins) {
   }
 }
 
+void op_subu(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+
+  set_reg(cpu, rd, cpu->regs[rs.data] - cpu->regs[rt.data]);
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%08X", func);
@@ -477,6 +485,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x21:
           op_addu(cpu, ins);
+          break;
+        case 0x23:
+          op_subu(cpu, ins);
           break;
         case 0x8:
           op_jr(cpu, ins);
