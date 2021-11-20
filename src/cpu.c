@@ -466,6 +466,21 @@ void op_div(Cpu *cpu, Ins ins) {
   }
 }
 
+void op_divu(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
+  uint32_t reg_t = cpu->regs[rt.data];
+
+  if (reg_t == 0) {
+    cpu->hi = reg_s;
+    cpu->lo = 0xFFFFFFFF;
+  } else {
+    cpu->hi = reg_s % reg_t;
+    cpu->lo = reg_s / reg_t;
+  }
+}
+
 void op_mflo(Cpu *cpu, Ins ins) {
   RegIndex rd = get_rd(ins);
 
@@ -523,6 +538,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x1A:
           op_div(cpu, ins);
+          break;
+        case 0x1B:
+          op_divu(cpu, ins);
           break;
         case 0x24:
           op_and(cpu, ins);
