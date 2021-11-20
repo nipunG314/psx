@@ -15,6 +15,10 @@ void set_env(int argc, char **argv) {
       set_flag(PRINT_INS);
     else if (strcmp(argv[i], "--quiet") == 0)
       log_set_quiet(1);
+    else if (strcmp(argv[i], "--output-log") == 0) {
+      log_set_quiet(1);
+      set_flag(OUTPUT_LOG);
+    }
   }
 }
 

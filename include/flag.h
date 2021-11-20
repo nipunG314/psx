@@ -8,6 +8,7 @@ typedef uint64_t FlagSet;
 typedef enum Flag {
   PRINT_PC = 1 << 0,
   PRINT_INS = 1 << 1,
+  OUTPUT_LOG = 1 << 2
 } Flag;
 
 FlagSet flag_set;

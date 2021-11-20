@@ -76,6 +76,8 @@ void run_next_ins(Cpu *cpu) {
 
   if (get_flag(PRINT_INS))
     log_ins(ins);
+  if (get_flag(OUTPUT_LOG))
+    printf("%08x %08x\n", cpu->pc.data, ins.data);
 
   // Increment PC
   cpu->pc = cpu->next_pc;
