@@ -487,6 +487,12 @@ void op_mflo(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, cpu->lo);
 }
 
+void op_mfhi(Cpu *cpu, Ins ins) {
+  RegIndex rd = get_rd(ins);
+
+  set_reg(cpu, rd, cpu->hi);
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%08X", func);
@@ -532,6 +538,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x9:
           op_jalr(cpu, ins);
+          break;
+        case 0x10:
+          op_mfhi(cpu, ins);
           break;
         case 0x12:
           op_mflo(cpu, ins);
