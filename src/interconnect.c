@@ -44,6 +44,12 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
   if (offset >= 0)
     return load_ram32(&inter->ram, MAKE_Addr(offset));
 
+  offset = range_contains(range(IRQ), addr);
+  if (offset >= 0) {
+    log_error("Unhandled read from IRQ. addr: 0x%08X", addr);
+    return 0;
+  }
+
   fatal("Unhandled load32 call. Address: 0x%08X", addr);
 }
 
