@@ -37,6 +37,8 @@ Cpu init_cpu(char const *bios_filename) {
   cpu.hi = cpu.lo = 0xDEADDEAD;
   cpu.load_delay_slot = MAKE_LoadDelaySlot(MAKE_RegIndex(0x0), 0x0); 
   cpu.inter = init_interconnect(bios_filename);
+  cpu.branch = 0;
+  cpu.delay_slot = 0;
 
   return cpu;
 }
@@ -74,6 +76,10 @@ void run_next_ins(Cpu *cpu) {
   Ins ins = MAKE_Ins(load32(cpu, cpu->pc));
   cpu->current_pc = cpu->pc;
 
+  // Check if in delay_slot
+  cpu->delay_slot = cpu->branch;
+  cpu->branch = 0;
+
   if (get_flag(PRINT_INS))
     log_ins(ins);
   if (get_flag(OUTPUT_LOG))
@@ -104,6 +110,11 @@ void exception(Cpu *cpu, Exception exp) {
   cpu->cause = exp << 2;
   cpu->epc = cpu->current_pc;
 
+  if (cpu->delay_slot) {
+    cpu->epc = MAKE_Addr(cpu->epc.data - 4);
+    cpu->cause = cpu->cause | (1 << 31);
+  }
+
   cpu->pc = handler_addr;
   cpu->next_pc = MAKE_Addr(cpu->pc.data + 4);
 }
@@ -112,6 +123,8 @@ void branch(Cpu *cpu, uint32_t offset) {
   offset = offset << 2;
 
   cpu->next_pc = MAKE_Addr(cpu->pc.data + offset);
+
+  cpu->branch = 1;
 }
 
 void op_lui(Cpu *cpu, Ins ins) {
@@ -181,6 +194,7 @@ void op_addi(Cpu *cpu, Ins ins) {
 
 void op_j(Cpu *cpu, Ins ins) {
   uint32_t imm_jump = get_imm_jump(ins);
+  cpu->branch = 1;
 
   cpu->next_pc = MAKE_Addr((cpu->next_pc.data & 0xF0000000) | (imm_jump << 2));
 }
@@ -197,6 +211,7 @@ void op_jalr(Cpu *cpu, Ins ins) {
 
   set_reg(cpu, rd, cpu->next_pc.data);
   cpu->next_pc = MAKE_Addr(cpu->regs[rs.data]);
+  cpu->branch = 1;
 }
 
 void op_or(Cpu *cpu, Ins ins) {
@@ -434,6 +449,7 @@ void op_sb(Cpu *cpu, Ins ins) {
 
 void op_jr(Cpu *cpu, Ins ins) {
   cpu->next_pc = MAKE_Addr(cpu->regs[get_rs(ins).data]);
+  cpu->branch = 1;
 }
 
 void op_bxx(Cpu *cpu, Ins ins) {

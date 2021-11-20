@@ -20,6 +20,8 @@ typedef struct Cpu {
   uint32_t lo;
   LoadDelaySlot load_delay_slot;
   Interconnect inter;
+  uint8_t branch;
+  uint8_t delay_slot;
 } Cpu;
 
 Cpu init_cpu(char const *bios_filename);
