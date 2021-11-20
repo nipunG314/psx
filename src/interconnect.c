@@ -47,6 +47,12 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
     return 0;
   }
 
+  offset = range_contains(range(DMA), addr);
+  if (offset >= 0) {
+    log_error("Unhandled read from DMA. addr: 0x%08X", addr);
+    return 0;
+  }
+
   fatal("Unhandled load32 call. Address: 0x%08X", addr);
 }
 
@@ -112,6 +118,13 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
     log_error("Unhandled Write to IRQ register. addr: 0x%08X. val: 0x%08X", addr, val);
     return;
   }
+
+  offset = range_contains(range(DMA), addr);
+  if (offset >= 0) {
+    log_error("Unhandled Write from DMA. addr: 0x%08X", addr);
+    return;
+  }
+
 
   fatal("Unhandled store32 call. addr: 0x%08X, val: 0x%08X", addr, val);
 }
