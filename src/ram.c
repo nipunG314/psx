@@ -39,6 +39,15 @@ void store_ram32(Ram *ram, Addr offset, uint32_t val) {
   ram->data[offset.data++] = b3; 
 }
 
+void store_ram16(Ram *ram, Addr offset, uint16_t val) {
+
+  uint8_t b0 = val;
+  uint8_t b1 = val >> 8;
+
+  ram->data[offset.data++] = b0;
+  ram->data[offset.data++] = b1;
+}
+
 void store_ram8(Ram *ram, Addr offset, uint8_t val) {
   ram->data[offset.data] = val;
 }

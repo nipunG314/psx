@@ -128,7 +128,13 @@ void store_inter16(Interconnect *inter, Addr addr, uint16_t val) {
 
   addr = mask_region(addr);
 
-  int32_t offset = range_contains(range(SPU), addr);
+  int32_t offset = range_contains(range(RAM), addr);
+  if (offset >= 0) {
+    store_ram16(&inter->ram, MAKE_Addr(offset), val);
+    return;
+  }
+
+  offset = range_contains(range(SPU), addr);
   if (offset >= 0) {
     log_error("Unhandled Write to SPU registers. addr: 0x%08X. val: 0x%08X", addr, val);
     return;
