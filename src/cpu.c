@@ -11,15 +11,17 @@ Cpu init_cpu(char const *bios_filename) {
   Cpu cpu = {0};
 
   cpu.pc = MAKE_Addr(range(BIOS).start);
-  cpu.prev_pc = MAKE_Addr(0x0);
+  cpu.next_pc = MAKE_Addr(cpu.pc.data + 4);
+  cpu.current_pc = MAKE_Addr(0x0);
   for(int index = 0; index < 32; index++) {
     cpu.regs[index] = 0xDEADDEAD;
     cpu.output_regs[index] = 0xDEADDEAD;
   }
   cpu.regs[0] = 0x0;
   cpu.sr = 0x0;
+  cpu.cause = 0x0;
+  cpu.epc = MAKE_Addr(0x0);
   cpu.hi = cpu.lo = 0xDEADDEAD;
-  cpu.next_ins = MAKE_Ins(0x0);
   cpu.load_delay_slot = MAKE_LoadDelaySlot(MAKE_RegIndex(0x0), 0x0); 
   cpu.inter = init_interconnect(bios_filename);
 
@@ -53,27 +55,11 @@ void set_reg(Cpu *cpu, RegIndex index, uint32_t value) {
 
 void run_next_ins(Cpu *cpu) {
   if (get_flag(PRINT_PC))
-    log_trace("PC: 0x%08X", cpu->prev_pc);
+    log_trace("PC: 0x%08X", cpu->pc);
 
-  // Assign current instruction
-  Ins ins = cpu->next_ins;
-
-  // Load next instruction
-  cpu->next_ins = MAKE_Ins(load32(cpu, cpu->pc));
-  cpu->prev_pc = cpu->pc;
-
-  // Increment PC
-  cpu->pc = MAKE_Addr(cpu->pc.data + 4);
-
-  // Update out_regs as per load_delay_slot
-  set_reg(cpu, cpu->load_delay_slot.index, cpu->load_delay_slot.val);
-  cpu->load_delay_slot = MAKE_LoadDelaySlot(MAKE_RegIndex(0x0), 0x0);
-
-  // Execute current instruction
-  decode_and_execute(cpu, ins);
-
-  // Copy output_regs into regs
-  memcpy(cpu->regs, cpu->output_regs, sizeof cpu->regs);
+  // Fetch the instruction
+  Ins ins = MAKE_Ins(load32(cpu, cpu->pc));
+  cpu->current_pc = cpu->pc;
 
   if (get_flag(PRINT_INS)) {
     uint32_t func = get_func(ins);
@@ -86,12 +72,40 @@ void run_next_ins(Cpu *cpu) {
     }
     log_trace("Instruction: 0x%08X", ins);
   }
+
+  // Increment PC
+  cpu->pc = cpu->next_pc;
+  cpu->next_pc = MAKE_Addr(cpu->next_pc.data + 4);
+
+  // Update out_regs as per load_delay_slot
+  set_reg(cpu, cpu->load_delay_slot.index, cpu->load_delay_slot.val);
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(MAKE_RegIndex(0x0), 0x0);
+
+  // Execute current instruction
+  decode_and_execute(cpu, ins);
+
+  // Copy output_regs into regs
+  memcpy(cpu->regs, cpu->output_regs, sizeof cpu->regs);
+}
+
+void exception(Cpu *cpu, Exception exp) {
+  Addr handler_addr = MAKE_Addr((cpu->sr & (1 << 22)) ? 0xBFC00180 : 0x80000080);
+
+  uint32_t mode = cpu->sr & 0x3F;
+  cpu->sr = cpu->sr & ~0x3F;
+  cpu->sr = cpu->sr | ((mode << 2) & 0x3F);
+
+  cpu->cause = exp << 2;
+  cpu->epc = cpu->current_pc;
+
+  cpu->pc = handler_addr;
+  cpu->next_pc = MAKE_Addr(cpu->pc.data + 4);
 }
 
 void branch(Cpu *cpu, uint32_t offset) {
   offset = offset << 2;
 
-  cpu->pc = MAKE_Addr(cpu->pc.data + offset - 4);
+  cpu->next_pc = MAKE_Addr(cpu->pc.data + offset);
 }
 
 void op_lui(Cpu *cpu, Ins ins) {
@@ -162,11 +176,11 @@ void op_addi(Cpu *cpu, Ins ins) {
 void op_j(Cpu *cpu, Ins ins) {
   uint32_t imm_jump = get_imm_jump(ins);
 
-  cpu->pc = MAKE_Addr((cpu->pc.data & 0xF0000000) | (imm_jump << 2));
+  cpu->next_pc = MAKE_Addr((cpu->next_pc.data & 0xF0000000) | (imm_jump << 2));
 }
 
 void op_jal(Cpu *cpu, Ins ins) {
-  set_reg(cpu, MAKE_RegIndex(0x1F), cpu->pc.data);
+  set_reg(cpu, MAKE_RegIndex(0x1F), cpu->next_pc.data);
 
   op_j(cpu, ins);
 }
@@ -175,8 +189,8 @@ void op_jalr(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rd = get_rd(ins);
 
-  set_reg(cpu, rd, cpu->pc.data);
-  cpu->pc = MAKE_Addr(cpu->regs[rs.data]);
+  set_reg(cpu, rd, cpu->next_pc.data);
+  cpu->next_pc = MAKE_Addr(cpu->regs[rs.data]);
 }
 
 void op_or(Cpu *cpu, Ins ins) {
@@ -233,7 +247,11 @@ void op_mfc0(Cpu *cpu, Ins ins) {
       cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, cpu->sr);
       break;
     case 13:
-      fatal("Unhandled read from CAUSE register.");
+      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, cpu->cause);
+      break;
+    case 14:
+      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, cpu->epc.data);
+      break;
     default:
       fatal("Unhandled read from cop0 register. RegIndex: %d", cop_reg);
   }
@@ -400,23 +418,24 @@ void op_sb(Cpu *cpu, Ins ins) {
 }
 
 void op_jr(Cpu *cpu, Ins ins) {
-  cpu->pc = MAKE_Addr(cpu->regs[get_rs(ins).data]);
+  cpu->next_pc = MAKE_Addr(cpu->regs[get_rs(ins).data]);
 }
 
 void op_bxx(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   uint32_t imm_se = get_imm_se(ins);
-  uint8_t flag = get_rd(ins).data;
 
-  int is_bgez = flag & 0x1;
-  int is_link = ((flag >> 1) == 0x8);
+  int is_bgez = (ins.data >> 16) & 0x1 ? 1 : 0;
+  int is_link = (((ins.data >> 17) & 0xf) == 0x8) ? 1 : 0;
 
   int32_t reg_s = cpu->regs[rs.data];
+  uint32_t test = (reg_s < 0);
+  test = test ^ is_bgez;
 
   if (is_link)
-    set_reg(cpu, MAKE_RegIndex(0x1F), cpu->pc.data);
+    set_reg(cpu, MAKE_RegIndex(0x1F), cpu->next_pc.data);
 
-  if ((is_bgez && (reg_s >= 0)) || (!is_bgez && (reg_s < 0))) {
+  if (test != 0) {
     branch(cpu, imm_se);
   }
 }
@@ -493,6 +512,10 @@ void op_mfhi(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, cpu->hi);
 }
 
+void op_syscall(Cpu *cpu, Ins ins) {
+  exception(cpu, SysCall);
+}
+
 void log_ins(Ins ins) {
   uint32_t func = get_func(ins);
   log_trace("ins_func: 0x%08X", func);
@@ -538,6 +561,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x9:
           op_jalr(cpu, ins);
+          break;
+        case 0xC:
+          op_syscall(cpu, ins);
           break;
         case 0x10:
           op_mfhi(cpu, ins);
