@@ -254,6 +254,14 @@ void op_and(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, cpu->regs[rs.data] & cpu->regs[rt.data]);
 }
 
+void op_nor(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+
+  set_reg(cpu, rd, ~(cpu->regs[rs.data] | cpu->regs[rt.data]));
+}
+
 void op_mtc0(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
   uint8_t cop_reg = get_cop_reg(ins);
@@ -528,12 +536,32 @@ void op_sra(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, reg_t);
 }
 
+void op_srav(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+
+  int32_t reg_t = cpu->regs[rt.data];
+  uint8_t shift = cpu->regs[rs.data] & 0x1F;
+  reg_t = reg_t >> shift;
+
+  set_reg(cpu, rd, reg_t);
+}
+
 void op_srl(Cpu *cpu, Ins ins) {
   uint32_t shift = get_shift(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
 
   set_reg(cpu, rd, cpu->regs[rt.data] >> shift);
+}
+
+void op_srlv(Cpu *cpu, Ins ins) {
+  RegIndex rs =get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+
+  set_reg(cpu, rd, cpu->regs[rt.data] >> (cpu->regs[rs.data] & 0x1F));
 }
 
 void op_lh(Cpu *cpu, Ins ins) {
@@ -672,6 +700,12 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
         case 0x4:
           op_sllv(cpu, ins);
           break;
+        case 0x6:
+          op_srlv(cpu, ins);
+          break;
+        case 0x7:
+          op_srav(cpu, ins);
+          break;
         case 0x9:
           op_jalr(cpu, ins);
           break;
@@ -701,6 +735,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x25:
           op_or(cpu, ins);
+          break;
+        case 0x27:
+          op_nor(cpu, ins);
           break;
         case 0x2A:
           op_slt(cpu, ins);
