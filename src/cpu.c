@@ -605,6 +605,30 @@ void op_lhu(Cpu *cpu, Ins ins) {
   cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load16(cpu, addr));
 }
 
+void op_mult(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  int32_t reg_s = cpu->regs[rs.data];
+  int32_t reg_t = cpu->regs[rt.data];
+  int64_t reg_s_64 = reg_s;
+  int64_t reg_t_64 = reg_t;
+
+  uint64_t prod = reg_s_64 * reg_t_64;
+  cpu->hi = prod >> 32;
+  cpu->lo = prod;
+}
+
+void op_multu(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  uint64_t reg_s = cpu->regs[rs.data];
+  uint64_t reg_t = cpu->regs[rt.data];
+
+  uint64_t prod = reg_s * reg_t;
+  cpu->hi = prod >> 32;
+  cpu->lo = prod;
+}
+
 void op_div(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
@@ -723,6 +747,12 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x13:
           op_mtlo(cpu, ins);
+          break;
+        case 0x18:
+          op_mult(cpu, ins);
+          break;
+        case 0x19:
+          op_multu(cpu, ins);
           break;
         case 0x1A:
           op_div(cpu, ins);
