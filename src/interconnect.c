@@ -53,6 +53,14 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
     return 0;
   }
 
+  offset = range_contains(range(GPU), addr);
+  if (offset >= 0) {
+    log_error("Unhandled read from GPU. addr: 0x%08X", addr);
+    // TempFix: Return 0x10000000 when offset == 4
+    // Tells BIOS that its ready DMA transfer
+    return (offset == 4 ? 0x10000000 : 0);
+  }
+
   fatal("Unhandled load32 call. Address: 0x%08X", addr);
 }
 
@@ -66,6 +74,12 @@ uint16_t load_inter16(Interconnect *inter, Addr addr) {
   offset = range_contains(range(SPU), addr);
   if (offset >= 0) {
     log_error("Unhandled read from SPU. addr: 0x%08X", addr);
+    return 0;
+  }
+
+  offset = range_contains(range(IRQ), addr);
+  if (offset >= 0) {
+    log_error("Unhandled read from IRQ. addr: 0x%08X", addr);
     return 0;
   }
 
@@ -141,6 +155,17 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
     return;
   }
 
+  offset = range_contains(range(GPU), addr);
+  if (offset >= 0) {
+    log_error("Unhandled Write from GPU. addr: 0x%08X", addr);
+    return;
+  }
+
+  offset = range_contains(range(TIMERS), addr);
+  if (offset >= 0) {
+    log_error("Unhandled Write from TIMERS. addr: 0x%08X", addr);
+    return;
+  }
 
   fatal("Unhandled store32 call. addr: 0x%08X, val: 0x%08X", addr, val);
 }
@@ -163,6 +188,12 @@ void store_inter16(Interconnect *inter, Addr addr, uint16_t val) {
   offset = range_contains(range(TIMERS), addr);
   if (offset >= 0) {
     log_error("Unhandled Write to TIMER registers. addr: 0x%08X. val: 0x%08X", addr, val);
+    return;
+  }
+
+  offset = range_contains(range(IRQ), addr);
+  if (offset >= 0) {
+    log_error("Unhandled Write from IRQ. addr: 0x%08X", addr);
     return;
   }
 
