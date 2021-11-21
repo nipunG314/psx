@@ -636,6 +636,133 @@ void op_lhu(Cpu *cpu, Ins ins) {
   cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load16(cpu, addr));
 }
 
+void op_lwl(Cpu *cpu, Ins ins) {
+  uint32_t imm_se = get_imm_se(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+
+  Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
+  uint32_t cur_val = cpu->output_regs[rt.data];
+
+  Addr aligned_addr = MAKE_Addr(addr.data & ~3);
+  Ins aligned_ins = MAKE_Ins(load32(cpu, aligned_addr));
+
+  uint32_t val;
+  switch (addr.data & 3) {
+    case 0:
+      val = (cur_val & 0x00FFFFFF) | (aligned_ins.data << 24);
+      break;
+    case 1:
+      val = (cur_val & 0x0000FFFF) | (aligned_ins.data << 16);
+      break;
+    case 2:
+      val = (cur_val & 0x000000FF) | (aligned_ins.data << 8);
+      break;
+    case 3:
+      val = (cur_val & 0x00000000) | (aligned_ins.data << 0);
+      break;
+    default:
+      fatal("Unreachable Statement!");
+  }
+
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, val);
+}
+
+void op_lwr(Cpu *cpu, Ins ins) {
+  uint32_t imm_se = get_imm_se(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+
+  Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
+  uint32_t cur_val = cpu->output_regs[rt.data];
+
+  Addr aligned_addr = MAKE_Addr(addr.data & ~3);
+  Ins aligned_ins = MAKE_Ins(load32(cpu, aligned_addr));
+
+  uint32_t val;
+  switch (addr.data & 3) {
+    case 0:
+      val = (cur_val & 0x00000000) | (aligned_ins.data >> 0);
+      break;
+    case 1:
+      val = (cur_val & 0xFF000000) | (aligned_ins.data >> 8);
+      break;
+    case 2:
+      val = (cur_val & 0xFFFF0000) | (aligned_ins.data >> 16);
+      break;
+    case 3:
+      val = (cur_val & 0xFFFFFF00) | (aligned_ins.data >> 24);
+      break;
+    default:
+      fatal("Unreachable Statement!");
+  }
+
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, val);
+}
+
+void op_swl(Cpu *cpu, Ins ins) {
+  uint32_t imm_se = get_imm_se(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+
+  Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
+  uint32_t val = cpu->regs[rt.data];
+
+  Addr aligned_addr = MAKE_Addr(addr.data & ~3);
+  uint32_t cur_val = load32(cpu, aligned_addr);
+
+  uint32_t final_val;
+  switch (addr.data & 3) {
+    case 0:
+      final_val = (cur_val & 0xFFFFFF00) | (val >> 24);
+      break;
+    case 1:
+      final_val = (cur_val & 0xFFFF0000) | (val >> 16);
+      break;
+    case 2:
+      final_val = (cur_val & 0xFF000000) | (val >> 8);
+      break;
+    case 3:
+      final_val = (cur_val & 0x00000000) | (val >> 0);
+      break;
+    default:
+      fatal("Unreachable Statement!");
+  }
+
+  store32(cpu, aligned_addr, final_val);
+}
+
+void op_swr(Cpu *cpu, Ins ins) {
+  uint32_t imm_se = get_imm_se(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+
+  Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
+  uint32_t val = cpu->regs[rt.data];
+
+  Addr aligned_addr = MAKE_Addr(addr.data & ~3);
+  uint32_t cur_val = load32(cpu, aligned_addr);
+
+  uint32_t final_val;
+  switch (addr.data & 3) {
+    case 0:
+      final_val = (cur_val & 0x00000000) | (val << 0);
+      break;
+    case 1:
+      final_val = (cur_val & 0x000000FF) | (val << 8);
+      break;
+    case 2:
+      final_val = (cur_val & 0x0000FFFF) | (val << 16);
+      break;
+    case 3:
+      final_val = (cur_val & 0x00FFFFFF) | (val << 24);
+      break;
+    default:
+      fatal("Unreachable Statement!");
+  }
+
+  store32(cpu, aligned_addr, final_val);
+}
 void op_mult(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
@@ -889,6 +1016,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
     case 0x21:
       op_lh(cpu, ins);
       break;
+    case 0x22:
+      op_lwl(cpu, ins);
+      break;
     case 0x23:
       op_lw(cpu, ins);
       break;
@@ -898,11 +1028,20 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
     case 0x25:
       op_lhu(cpu, ins);
       break;
+    case 0x26:
+      op_lwr(cpu, ins);
+      break;
     case 0x29:
       op_sh(cpu, ins);
       break;
     case 0x28:
       op_sb(cpu, ins);
+      break;
+    case 0x2A:
+      op_swl(cpu, ins);
+      break;
+    case 0x2E:
+      op_swr(cpu, ins);
       break;
     case 0x3:
       op_jal(cpu, ins);
