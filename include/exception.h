@@ -7,7 +7,8 @@ typedef enum Exception {
   LoadAddressError = 0x4,
   StoreAddressError = 0x5,
   Break = 0x9,
-  CoprocessorError = 0xb
+  CoprocessorError = 0xb,
+  IllegalInstruction = 0xa
 } Exception;
 
 #endif

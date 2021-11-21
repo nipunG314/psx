@@ -967,8 +967,7 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           op_jr(cpu, ins);
           break;
         default:
-          log_ins(ins);
-          fatal("DecodeError: Unhandled instruction: 0x%08X", ins);
+          exception(cpu, IllegalInstruction);
       }
       break;
     case 0x9:
@@ -989,8 +988,7 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           op_rfe(cpu, ins);
           break;
         default:
-          log_ins(ins);
-          fatal("DecodeError: Unhandled instruction: 0x%08X", ins);
+          exception(cpu, IllegalInstruction);
       }
       break;
     case 0x11:
@@ -1071,8 +1069,7 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       op_swc2(cpu, ins);
       break;
     default:
-      log_ins(ins);
-      fatal("DecodeError: Unhandled instruction: 0x%08X", ins);
+      exception(cpu, IllegalInstruction);
   }
 }
 
