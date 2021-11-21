@@ -326,6 +326,14 @@ void op_mfc0(Cpu *cpu, Ins ins) {
   }
 }
 
+void op_lwc2(Cpu *cpu, Ins ins) {
+  fatal("Unhandled GTE LWC. Ins: 0x%08X", ins);
+}
+
+void op_swc2(Cpu *cpu, Ins ins) {
+  fatal("Unhandled GTE SWC. Ins: 0x%08X", ins);
+}
+
 void op_rfe(Cpu *cpu, Ins ins) {
   if ((ins.data & 0x3F) != 0x10)
     fatal("Invalid cop0 instruction: 0x%08X", ins);
@@ -1045,6 +1053,22 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       break;
     case 0x3:
       op_jal(cpu, ins);
+      break;
+    case 0x30:
+    case 0x31:
+    case 0x33:
+      exception(cpu, CoprocessorError);
+      break;
+    case 0x32:
+      op_lwc2(cpu, ins);
+      break;
+    case 0x38:
+    case 0x39:
+    case 0x3B:
+      exception(cpu, CoprocessorError);
+      break;
+    case 0x3A:
+      op_swc2(cpu, ins);
       break;
     default:
       log_ins(ins);
