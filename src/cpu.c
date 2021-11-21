@@ -151,6 +151,14 @@ void op_ori(Cpu *cpu, Ins ins) {
   set_reg(cpu, rt, imm | cpu->regs[rs.data]);
 }
 
+void op_xori(Cpu *cpu, Ins ins) {
+  uint32_t imm = get_imm(ins);
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+
+  set_reg(cpu, rt, imm ^ cpu->regs[rs.data]);
+}
+
 void op_andi(Cpu *cpu, Ins ins) {
   uint32_t imm = get_imm(ins);
   RegIndex rs = get_rs(ins);
@@ -849,6 +857,13 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           log_ins(ins);
           fatal("DecodeError: Unhandled instruction: 0x%08X", ins);
       }
+      break;
+    case 0x11:
+    case 0x13:
+      exception(cpu, CoprocessorError);
+      break;
+    case 0x12:
+      fatal("GTEError: Unhandled GTE instruction: 0x%08X", ins);
       break;
     case 0x1:
       op_bxx(cpu, ins);

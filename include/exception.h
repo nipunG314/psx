@@ -6,7 +6,8 @@ typedef enum Exception {
   Overflow = 0xc,
   LoadAddressError = 0x4,
   StoreAddressError = 0x5,
-  Break = 0x9
+  Break = 0x9,
+  CoprocessorError = 0xb
 } Exception;
 
 #endif
