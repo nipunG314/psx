@@ -262,6 +262,14 @@ void op_nor(Cpu *cpu, Ins ins) {
   set_reg(cpu, rd, ~(cpu->regs[rs.data] | cpu->regs[rt.data]));
 }
 
+void op_xor(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+
+  set_reg(cpu, rd, cpu->regs[rs.data] ^ cpu->regs[rt.data]);
+}
+
 void op_mtc0(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
   uint8_t cop_reg = get_cop_reg(ins);
@@ -445,7 +453,7 @@ void op_add(Cpu *cpu, Ins ins) {
   int32_t reg_s = cpu->regs[rs.data];
   int32_t reg_t = cpu->regs[rt.data];
 
-  if (reg_s >= 0 && reg_s > INT32_MAX - reg_t) {
+  if ((reg_t >= 0 && reg_s > INT32_MAX - reg_t) || (reg_s >= 0 && reg_t > INT32_MAX - reg_s)) {
     exception(cpu, Overflow);
     return;
   }
@@ -515,6 +523,21 @@ void op_bxx(Cpu *cpu, Ins ins) {
   if (test != 0) {
     branch(cpu, imm_se);
   }
+}
+
+void op_sub(Cpu *cpu, Ins ins) {
+  RegIndex rs = get_rs(ins);
+  RegIndex rt = get_rt(ins);
+  RegIndex rd = get_rd(ins);
+  int32_t reg_s = cpu->regs[rs.data];
+  int32_t reg_t = cpu->regs[rt.data];
+
+  if (reg_t < 0 && reg_s > INT32_MAX + reg_t) {
+    exception(cpu, Overflow);
+    return;
+  }
+
+  set_reg(cpu, rd, reg_s - reg_t);
 }
 
 void op_subu(Cpu *cpu, Ins ins) {
@@ -690,6 +713,10 @@ void op_syscall(Cpu *cpu, Ins ins) {
   exception(cpu, SysCall);
 }
 
+void op_break(Cpu *cpu, Ins ins) {
+  exception(cpu, Break);
+}
+
 void decode_and_execute(Cpu *cpu, Ins ins) {
   switch (get_func(ins)) {
     case 0xF:
@@ -736,6 +763,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
         case 0xC:
           op_syscall(cpu, ins);
           break;
+        case 0xD:
+          op_break(cpu, ins);
+          break;
         case 0x10:
           op_mfhi(cpu, ins);
           break;
@@ -760,11 +790,23 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
         case 0x1B:
           op_divu(cpu, ins);
           break;
-        case 0x24:
+        case 0x21:
+          op_addu(cpu, ins);
+          break;
+        case 0x22:
+          op_sub(cpu, ins);
+          break;
+        case 0x23:
+          op_subu(cpu, ins);
+          break;
+       case 0x24:
           op_and(cpu, ins);
           break;
         case 0x25:
           op_or(cpu, ins);
+          break;
+        case 0x26:
+          op_xor(cpu, ins);
           break;
         case 0x27:
           op_nor(cpu, ins);
@@ -777,12 +819,6 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x20:
           op_add(cpu, ins);
-          break;
-        case 0x21:
-          op_addu(cpu, ins);
-          break;
-        case 0x23:
-          op_subu(cpu, ins);
           break;
         case 0x8:
           op_jr(cpu, ins);
