@@ -58,7 +58,13 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
     log_error("Unhandled read from GPU. addr: 0x%08X", addr);
     // TempFix: Return 0x10000000 when offset == 4
     // Tells BIOS that its ready DMA transfer
-    return (offset == 4 ? 0x10000000 : 0);
+    return (offset == 4 ? 0x1C000000 : 0);
+  }
+
+  offset = range_contains(range(TIMERS), addr);
+  if (offset >= 0) {
+    log_error("Unhandled read from TIMERS. addr: 0x%08X", addr);
+    return 0;
   }
 
   fatal("Unhandled load32 call. Address: 0x%08X", addr);
