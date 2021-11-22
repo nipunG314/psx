@@ -43,6 +43,8 @@ typedef struct DmaChannel {
   uint8_t chop_cpu_size;
   uint8_t dummy;
   uint32_t base_address;
+  uint16_t block_size;
+  uint16_t block_count;
 } DmaChannel;
 
 DmaChannel init_dma_channel();
@@ -50,6 +52,16 @@ uint32_t get_dma_channel_control(DmaChannel *channel);
 void set_dma_channel_control(DmaChannel *channel, uint32_t val);
 static inline void set_dma_channel_base_address(DmaChannel *channel, uint32_t val) {
   channel->base_address = val & 0x00FFFFFF;
+}
+static inline uint32_t get_dma_channel_block_control(DmaChannel *channel) {
+  uint32_t block_size = channel->block_size;
+  uint32_t block_count = channel->block_count;
+
+  return (block_count << 16) | block_size;
+}
+static inline void set_dma_channel_block_control(DmaChannel *channel, uint32_t val) {
+  channel->block_size = val;
+  channel->block_count = (val >> 16);
 }
 
 typedef struct Dma {

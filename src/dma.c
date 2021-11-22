@@ -16,6 +16,8 @@ DmaChannel init_dma_channel() {
   channel.chop_cpu_size = 0;
   channel.dummy = 0;
   channel.base_address = 0;
+  channel.block_size = 0;
+  channel.block_count = 0;
 
   return channel;
 }
@@ -83,6 +85,8 @@ uint32_t get_dma_reg(Dma *dma, Addr offset) {
         switch (minor) {
           case 0:
             return dma->channels[major].base_address;
+          case 4:
+            return get_dma_channel_block_control(&dma->channels[major]);
           case 8:
             return get_dma_channel_control(&dma->channels[major]);
           default:
@@ -121,6 +125,9 @@ void set_dma_reg(Dma *dma, Addr offset, uint32_t val) {
         switch (minor) {
           case 0:
             set_dma_channel_base_address(&dma->channels[major], val);
+            break;
+          case 4:
+            set_dma_channel_block_control(&dma->channels[major], val);
             break;
           case 8:
             set_dma_channel_control(&dma->channels[major], val);
