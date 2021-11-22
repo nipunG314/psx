@@ -7,9 +7,9 @@ DmaChannel init_dma_channel() {
   DmaChannel channel;
 
   channel.enable = 0;
-  channel.direction = ToRam;
-  channel.step = Increment;
-  channel.sync = Manual;
+  channel.direction = DmaToRam;
+  channel.step = DmaIncrement;
+  channel.sync = DmaManual;
   channel.trigger = 0;
   channel.chop = 0;
   channel.chop_dma_size = 0;
@@ -39,18 +39,18 @@ uint32_t get_dma_channel_control(DmaChannel *channel) {
 }
 
 void set_dma_channel_control(DmaChannel *channel, uint32_t val) {
-  channel->direction = (val & 1) ? FromRam : ToRam;
-  channel->step = ((val >> 1) & 1) ? Decrement: Increment;
+  channel->direction = (val & 1) ? DmaFromRam : DmaToRam;
+  channel->step = ((val >> 1) & 1) ? DmaDecrement: DmaIncrement;
   channel->chop = (val >> 8) & 1;
   switch ((val >> 9) & 3) {
     case 0:
-      channel->sync = Manual;
+      channel->sync = DmaManual;
       break;
     case 1:
-      channel->sync = Request;
+      channel->sync = DmaRequest;
       break;
     case 2:
-      channel->sync = LinkedList;
+      channel->sync = DmaLinkedList;
       break;
     default:
       fatal("Unknown DMA Sync Mode: %d", (val >> 9) & 1);
@@ -64,15 +64,15 @@ void set_dma_channel_control(DmaChannel *channel, uint32_t val) {
 
 uint32_t get_dma_channel_transfer_size(DmaChannel *channel) {
   switch (channel->sync) {
-    case Manual:
+    case DmaManual:
       return channel->block_size;
-    case Request:
+    case DmaRequest:
       {
         uint32_t block_size = channel->block_size;
         uint32_t block_count = channel->block_count;
         return block_size * block_count;
       }
-    case LinkedList:
+    case DmaLinkedList:
       return 0;
   }
 

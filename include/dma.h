@@ -6,29 +6,29 @@
 #define DMA_H
 
 typedef enum DmaDirection {
-  ToRam,
-  FromRam
+  DmaToRam,
+  DmaFromRam
 } DmaDirection;
 
 typedef enum DmaStep {
-  Increment,
-  Decrement
+  DmaIncrement,
+  DmaDecrement
 } DmaStep;
 
 typedef enum DmaSync {
-  Manual,
-  Request,
-  LinkedList
+  DmaManual,
+  DmaRequest,
+  DmaLinkedList
 } DmaSync;
 
 typedef enum DmaPort {
-  MdecIn,
-  MdecOut,
-  Gpu,
-  CdRom,
-  Spu,
-  Pio,
-  Otc,
+  DmaMdecIn,
+  DmaMdecOut,
+  DmaGpu,
+  DmaCdRom,
+  DmaSpu,
+  DmaPio,
+  DmaOtc,
   DmaChannelCount
 } DmaPort;
 
@@ -64,7 +64,7 @@ static inline void set_dma_channel_block_control(DmaChannel *channel, uint32_t v
   channel->block_count = (val >> 16);
 }
 static inline uint8_t get_dma_channel_active(DmaChannel *channel) {
-  uint8_t trigger = (channel->sync == Manual) ? channel->trigger : 0x1;
+  uint8_t trigger = (channel->sync == DmaManual) ? channel->trigger : 0x1;
 
   return channel->enable && trigger;
 }

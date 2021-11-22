@@ -326,13 +326,13 @@ void perform_dma_block(Interconnect *inter, DmaChannel *channel, DmaPort port) {
     Addr cur_addr = MAKE_Addr(addr.data & 0x001FFFFC);
 
     switch (channel->direction) {
-      case FromRam:
+      case DmaFromRam:
         fatal("Unhandled DMA Direction. direction: 0x%08X", channel->direction);
-      case ToRam:
+      case DmaToRam:
         {
           uint32_t source_word;
           switch (port) {
-            case Otc:
+            case DmaOtc:
               source_word = (transfer_size == 1) ? 0x00FFFFFF : ((addr.data - 4) & 0x001FFFFF);
               break;
             default:
@@ -351,12 +351,46 @@ void perform_dma_block(Interconnect *inter, DmaChannel *channel, DmaPort port) {
   channel->trigger = 0;
 }
 
+void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
+  DmaChannel channel = inter->dma.channels[port];
+  Addr addr = MAKE_Addr(channel.base_address.data & 0x001FFFFC);
+
+  if (channel.direction == DmaToRam)
+    fatal("Invalid DMA Direction LinkedList Mode");
+
+  if (port != DmaGpu)
+    fatal("Attempted LinkedList DMA on port: 0x%08X", port);
+
+  while (1) {
+    uint32_t header = load_ram32(&inter->ram, addr);
+    uint8_t transfer_size = header >> 24;
+
+    while (transfer_size > 0) {
+      addr = MAKE_Addr((addr.data + 4) & 0x001FFFFC);
+
+      uint32_t command = load_ram32(&inter->ram, addr);
+
+      log_error("GPU Command: 0x%08X", command);
+
+      transfer_size--;
+    }
+
+    if (header & 0x00800000)
+      break;
+  }
+
+  channel.enable = 0;
+  channel.trigger = 0;
+}
+
 void perform_dma(Interconnect *inter, DmaChannel *channel, DmaPort port) {
-  switch (channel->sync) {
-    case LinkedList:
-      fatal("LinkedList Mode Unsupported");
+  switch (inter->dma.channels[port].sync) {
+    case DmaLinkedList:
+      perform_dma_linked_list(inter, port);
+      break;
     default:
       perform_dma_block(inter, channel, port);
+      break;
   }
 }
 
