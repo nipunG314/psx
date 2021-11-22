@@ -42,11 +42,15 @@ typedef struct DmaChannel {
   uint8_t chop_dma_size;
   uint8_t chop_cpu_size;
   uint8_t dummy;
+  uint32_t base_address;
 } DmaChannel;
 
 DmaChannel init_dma_channel();
 uint32_t get_dma_channel_control(DmaChannel *channel);
 void set_dma_channel_control(DmaChannel *channel, uint32_t val);
+static inline void set_dma_channel_base_address(DmaChannel *channel, uint32_t val) {
+  channel->base_address = val & 0x00FFFFFF;
+}
 
 typedef struct Dma {
   uint32_t control;
