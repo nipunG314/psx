@@ -1,5 +1,6 @@
 #include "bios.h"
 #include "ram.h"
+#include "dma.h"
 #include "instruction.h"
 
 #ifndef INTERCONNECT_H
@@ -8,6 +9,7 @@
 typedef struct Interconnect {
   Bios bios;
   Ram ram;
+  Dma dma;
 } Interconnect;
 
 Interconnect init_interconnect(char const *bios_filename);

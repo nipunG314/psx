@@ -26,6 +26,7 @@ Interconnect init_interconnect(char const *bios_filename) {
 
   inter.bios = init_bios(bios_filename);
   inter.ram = init_ram();
+  inter.dma = init_dma();
 
   return inter;
 }
@@ -49,8 +50,7 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
 
   offset = range_contains(range(DMA), addr);
   if (offset >= 0) {
-    log_error("Unhandled read from DMA. addr: 0x%08X", addr);
-    return 0;
+    return get_dma_reg(&inter->dma, MAKE_Addr(offset));
   }
 
   offset = range_contains(range(GPU), addr);
@@ -151,19 +151,19 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
 
   offset = range_contains(range(DMA), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write from DMA. addr: 0x%08X", addr);
+    set_dma_reg(&inter->dma, MAKE_Addr(offset), val);
     return;
   }
 
   offset = range_contains(range(GPU), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write from GPU. addr: 0x%08X", addr);
+    log_error("Unhandled Write to GPU register. addr: 0x%08X. val: 0x%08X", addr, val);
     return;
   }
 
   offset = range_contains(range(TIMERS), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write from TIMERS. addr: 0x%08X", addr);
+    log_error("Unhandled Write to TIMERS register. addr: 0x%08X. val: 0x%08X", addr, val);
     return;
   }
 
