@@ -5,6 +5,49 @@
 #ifndef DMA_H
 #define DMA_H
 
+typedef enum DmaDirection {
+  ToRam,
+  FromRam
+} DmaDirection;
+
+typedef enum DmaStep {
+  Increment,
+  Decrement
+} DmaStep;
+
+typedef enum DmaSync {
+  Manual,
+  Request,
+  LinkedList
+} DmaSync;
+
+typedef enum DmaPort {
+  MdecIn,
+  MdecOut,
+  Gpu,
+  CdRom,
+  Spu,
+  Pio,
+  Otc,
+  DmaChannelCount
+} DmaPort;
+
+typedef struct DmaChannel {
+  uint8_t enable;
+  DmaDirection direction;
+  DmaStep step;
+  DmaSync sync;
+  uint8_t trigger;
+  uint8_t chop;
+  uint8_t chop_dma_size;
+  uint8_t chop_cpu_size;
+  uint8_t dummy;
+} DmaChannel;
+
+DmaChannel init_dma_channel();
+uint32_t get_dma_channel_control(DmaChannel *channel);
+void set_dma_channel_control(DmaChannel *channel, uint32_t val);
+
 typedef struct Dma {
   uint32_t control;
   uint8_t irq_master_en;
@@ -12,6 +55,7 @@ typedef struct Dma {
   uint8_t irq_channel_flags;
   uint8_t irq_force;
   uint8_t irq_dummy;
+  DmaChannel channels[DmaChannelCount];
 } Dma;
 
 Dma init_dma();
