@@ -73,12 +73,16 @@ void set_reg(Cpu *cpu, RegIndex index, uint32_t value) {
 }
 
 void run_next_ins(Cpu *cpu) {
-  if (get_flag(PRINT_PC))
-    log_trace("PC: 0x%08X", cpu->pc);
-
   // Fetch the instruction
   Ins ins = MAKE_Ins(load32(cpu, cpu->pc));
   cpu->current_pc = cpu->pc;
+
+  if (get_flag(PRINT_PC)) {
+    set_pc(cpu->current_pc.data);
+    if (logging_pc) {
+      LOG_PC();
+    }
+  }
 
   if (cpu->current_pc.data % 4) {
     exception(cpu, LoadAddressError);

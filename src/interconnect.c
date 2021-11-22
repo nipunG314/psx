@@ -3,6 +3,7 @@
 #include "instruction.h"
 #include "interconnect.h"
 #include "log.h"
+#include "flag.h"
 
 uint32_t const RegionMask[] = {
   // KUSEG - 2GB
@@ -384,6 +385,8 @@ void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
 }
 
 void perform_dma(Interconnect *inter, DmaChannel *channel, DmaPort port) {
+  START_LOGGING_PC();
+
   switch (inter->dma.channels[port].sync) {
     case DmaLinkedList:
       perform_dma_linked_list(inter, port);
