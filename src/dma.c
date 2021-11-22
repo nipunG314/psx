@@ -15,7 +15,7 @@ DmaChannel init_dma_channel() {
   channel.chop_dma_size = 0;
   channel.chop_cpu_size = 0;
   channel.dummy = 0;
-  channel.base_address = 0;
+  channel.base_address = MAKE_Addr(0);
   channel.block_size = 0;
   channel.block_count = 0;
 
@@ -62,96 +62,28 @@ void set_dma_channel_control(DmaChannel *channel, uint32_t val) {
   channel->dummy = (val >> 29) & 3;
 }
 
+uint32_t get_dma_channel_transfer_size(DmaChannel *channel) {
+  switch (channel->sync) {
+    case Manual:
+      return channel->block_size;
+    case Request:
+      {
+        uint32_t block_size = channel->block_size;
+        uint32_t block_count = channel->block_count;
+        return block_size * block_count;
+      }
+    case LinkedList:
+      return 0;
+  }
+
+  return 0;
+}
+
 Dma init_dma() {
   Dma dma;
   dma.control = 0x07654321;
 
   return dma;
-}
-
-uint32_t get_dma_reg(Dma *dma, Addr offset) {
-  uint8_t major = (offset.data & 0x70) >> 4;
-  uint8_t minor = offset.data & 0xF;
-
-  switch (major) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-      {
-        switch (minor) {
-          case 0:
-            return dma->channels[major].base_address;
-          case 4:
-            return get_dma_channel_block_control(&dma->channels[major]);
-          case 8:
-            return get_dma_channel_control(&dma->channels[major]);
-          default:
-            fatal("Unhandled DMA Read. addr: 0x%08X", offset);
-        }
-      }
-      break;
-    case 7:
-      switch (minor) {
-        case 0:
-          return dma->control;
-        case 4:
-          return get_dma_interrupt(dma);
-        default:
-          fatal("Unhandled DMA Read. addr: 0x%08X", offset);
-      }
-      break;
-    default:
-      fatal("Unhandled DMA Read. addr: 0x%08X", offset);
-  }
-}
-
-void set_dma_reg(Dma *dma, Addr offset, uint32_t val) {
-  uint8_t major = (offset.data & 0x70) >> 4;
-  uint8_t minor = offset.data & 0xF;
-
-  switch (major) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-      {
-        switch (minor) {
-          case 0:
-            set_dma_channel_base_address(&dma->channels[major], val);
-            break;
-          case 4:
-            set_dma_channel_block_control(&dma->channels[major], val);
-            break;
-          case 8:
-            set_dma_channel_control(&dma->channels[major], val);
-            break;
-          default:
-            fatal("Unhandled DMA Write. addr: 0x%08X, val: 0x%08X", offset, val);
-        }
-      }
-      break;
-    case 7:
-      switch (minor) {
-        case 0:
-          dma->control = val;
-          break;
-        case 4:
-          set_dma_interrupt(dma, val);
-          break;
-        default:
-          fatal("Unhandled DMA Write. addr: 0x%08X, val: 0x%08X", offset, val);
-      }
-      break;
-    default:
-      fatal("Unhandled DMA Write. addr: 0x%08X, val: 0x%08X", offset, val);
-  }
 }
 
 uint32_t get_dma_interrupt(Dma* dma) {
@@ -183,3 +115,4 @@ void set_dma_interrupt(Dma* dma, uint32_t val) {
   uint8_t ack = ((val >> 24) & 0x3F);
   dma->irq_channel_flags &= ~ack;
 }
+

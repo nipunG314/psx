@@ -50,7 +50,7 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
 
   offset = range_contains(range(DMA), addr);
   if (offset >= 0) {
-    return get_dma_reg(&inter->dma, MAKE_Addr(offset));
+    return get_dma_reg(inter, MAKE_Addr(offset));
   }
 
   offset = range_contains(range(GPU), addr);
@@ -151,7 +151,7 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
 
   offset = range_contains(range(DMA), addr);
   if (offset >= 0) {
-    set_dma_reg(&inter->dma, MAKE_Addr(offset), val);
+    set_dma_reg(inter, MAKE_Addr(offset), val);
     return;
   }
 
@@ -216,6 +216,142 @@ void store_inter8(Interconnect *inter, Addr addr, uint8_t val) {
   }
 
   fatal("Unhandled store8 call. addr: 0x%08X, val: 0x%08X", addr, val);
+}
+
+uint32_t get_dma_reg(Interconnect *inter, Addr offset) {
+  uint8_t major = (offset.data & 0x70) >> 4;
+  uint8_t minor = offset.data & 0xF;
+
+  switch (major) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+      {
+        switch (minor) {
+          case 0:
+            return inter->dma.channels[major].base_address.data;
+          case 4:
+            return get_dma_channel_block_control(&inter->dma.channels[major]);
+          case 8:
+            return get_dma_channel_control(&inter->dma.channels[major]);
+          default:
+            fatal("Unhandled DMA Read. addr: 0x%08X", offset);
+        }
+      }
+      break;
+    case 7:
+      switch (minor) {
+        case 0:
+          return inter->dma.control;
+        case 4:
+          return get_dma_interrupt(&inter->dma);
+        default:
+          fatal("Unhandled DMA Read. addr: 0x%08X", offset);
+      }
+      break;
+    default:
+      fatal("Unhandled DMA Read. addr: 0x%08X", offset);
+  }
+}
+
+void set_dma_reg(Interconnect *inter, Addr offset, uint32_t val) {
+  uint8_t major = (offset.data & 0x70) >> 4;
+  uint8_t minor = offset.data & 0xF;
+
+  switch (major) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+      {
+        switch (minor) {
+          case 0:
+            set_dma_channel_base_address(&inter->dma.channels[major], val);
+            break;
+          case 4:
+            set_dma_channel_block_control(&inter->dma.channels[major], val);
+            break;
+          case 8:
+            set_dma_channel_control(&inter->dma.channels[major], val);
+            break;
+          default:
+            fatal("Unhandled DMA Write. addr: 0x%08X, val: 0x%08X", offset, val);
+        }
+
+        if (get_dma_channel_active(&inter->dma.channels[major])) {
+          perform_dma(inter, &inter->dma.channels[major], major);
+        }
+      }
+      break;
+    case 7:
+      switch (minor) {
+        case 0:
+          inter->dma.control = val;
+          break;
+        case 4:
+          set_dma_interrupt(&inter->dma, val);
+          break;
+        default:
+          fatal("Unhandled DMA Write. addr: 0x%08X, val: 0x%08X", offset, val);
+      }
+      break;
+    default:
+      fatal("Unhandled DMA Write. addr: 0x%08X, val: 0x%08X", offset, val);
+  }
+}
+
+void perform_dma_block(Interconnect *inter, DmaChannel *channel, DmaPort port) {
+  int8_t _increment = 8 * channel->step - 4;
+  uint8_t increment = increment;
+  Addr addr = channel->base_address;
+  size_t transfer_size = get_dma_channel_transfer_size(channel);
+
+  if (transfer_size == 0)
+    fatal("perform_dma_block called in LinkedList Mode!");
+
+  while (transfer_size > 0) {
+    Addr cur_addr = MAKE_Addr(addr.data & 0x001FFFFC);
+
+    switch (channel->direction) {
+      case FromRam:
+        fatal("Unhandled DMA Direction. direction: 0x%08X", channel->direction);
+      case ToRam:
+        {
+          uint32_t source_word;
+          switch (port) {
+            case Otc:
+              source_word = (transfer_size == 1) ? 0x00FFFFFF : ((addr.data - 4) & 0x001FFFFF);
+              break;
+            default:
+              fatal("Unhandled DMA Port. port: 0x%08X", port);
+          }
+
+          store_ram32(&inter->ram, cur_addr, source_word);
+        }
+    }
+
+    addr = MAKE_Addr(addr.data + increment);
+    transfer_size--;
+  }
+
+  channel->enable = 0;
+  channel->trigger = 0;
+}
+
+void perform_dma(Interconnect *inter, DmaChannel *channel, DmaPort port) {
+  switch (channel->sync) {
+    case LinkedList:
+      fatal("LinkedList Mode Unsupported");
+    default:
+      perform_dma_block(inter, channel, port);
+  }
 }
 
 void destroy_interconnect(Interconnect *inter) {

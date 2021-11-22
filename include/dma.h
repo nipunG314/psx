@@ -42,7 +42,7 @@ typedef struct DmaChannel {
   uint8_t chop_dma_size;
   uint8_t chop_cpu_size;
   uint8_t dummy;
-  uint32_t base_address;
+  Addr base_address;
   uint16_t block_size;
   uint16_t block_count;
 } DmaChannel;
@@ -51,7 +51,7 @@ DmaChannel init_dma_channel();
 uint32_t get_dma_channel_control(DmaChannel *channel);
 void set_dma_channel_control(DmaChannel *channel, uint32_t val);
 static inline void set_dma_channel_base_address(DmaChannel *channel, uint32_t val) {
-  channel->base_address = val & 0x00FFFFFF;
+  channel->base_address = MAKE_Addr(val & 0x00FFFFFF);
 }
 static inline uint32_t get_dma_channel_block_control(DmaChannel *channel) {
   uint32_t block_size = channel->block_size;
@@ -63,6 +63,12 @@ static inline void set_dma_channel_block_control(DmaChannel *channel, uint32_t v
   channel->block_size = val;
   channel->block_count = (val >> 16);
 }
+static inline uint8_t get_dma_channel_active(DmaChannel *channel) {
+  uint8_t trigger = (channel->sync == Manual) ? channel->trigger : 0x1;
+
+  return channel->enable && trigger;
+}
+uint32_t get_dma_channel_transfer_size(DmaChannel *channel);
 
 typedef struct Dma {
   uint32_t control;
@@ -75,14 +81,12 @@ typedef struct Dma {
 } Dma;
 
 Dma init_dma();
-uint32_t get_dma_reg(Dma *dma, Addr offset);
-void set_dma_reg(Dma *dma, Addr offset, uint32_t val);
 
-static inline uint8_t irq_status(Dma* dma) {
+static inline uint8_t irq_status(Dma *dma) {
   uint8_t channel_irq = dma->irq_channel_flags & dma->irq_channel_en;
 
   return (dma->irq_force || (dma->irq_master_en && channel_irq));
 }
-uint32_t get_dma_interrupt(Dma* dma);
-void set_dma_interrupt(Dma* dma, uint32_t val);
+uint32_t get_dma_interrupt(Dma *dma);
+void set_dma_interrupt(Dma *dma, uint32_t val);
 #endif
