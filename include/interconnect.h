@@ -22,7 +22,7 @@ void store_inter8(Interconnect *inter, Addr addr, uint8_t val);
 
 uint32_t get_dma_reg(Interconnect *inter, Addr offset);
 void set_dma_reg(Interconnect *inter, Addr offset, uint32_t val);
-void perform_dma(Interconnect *inter, DmaChannel *channel, DmaPort port);
+void perform_dma(Interconnect *inter, DmaPort port);
 
 void destroy_interconnect(Interconnect *inter);
 

@@ -307,7 +307,7 @@ void set_dma_reg(Interconnect *inter, Addr offset, uint32_t val) {
         }
 
         if (get_dma_channel_active(&inter->dma.channels[major])) {
-          perform_dma(inter, &inter->dma.channels[major], major);
+          perform_dma(inter, major);
         }
       }
       break;
@@ -401,7 +401,7 @@ void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
   channel.trigger = 0;
 }
 
-void perform_dma(Interconnect *inter, DmaChannel *channel, DmaPort port) {
+void perform_dma(Interconnect *inter, DmaPort port) {
   START_LOGGING_PC();
 
   switch (inter->dma.channels[port].sync) {
