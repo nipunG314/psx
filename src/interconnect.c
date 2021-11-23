@@ -229,6 +229,8 @@ uint32_t get_dma_reg(Interconnect *inter, Addr offset) {
   uint8_t major = (offset.data & 0x70) >> 4;
   uint8_t minor = offset.data & 0xF;
 
+  uint32_t return_val;
+
   switch (major) {
     case 0:
     case 1:
@@ -240,11 +242,14 @@ uint32_t get_dma_reg(Interconnect *inter, Addr offset) {
       {
         switch (minor) {
           case 0:
-            return inter->dma.channels[major].base_address.data;
+            return_val = inter->dma.channels[major].base_address.data;
+            break;
           case 4:
-            return get_dma_channel_block_control(&inter->dma.channels[major]);
+            return_val = get_dma_channel_block_control(&inter->dma.channels[major]);
+            break;
           case 8:
-            return get_dma_channel_control(&inter->dma.channels[major]);
+            return_val = get_dma_channel_control(&inter->dma.channels[major]);
+            break;
           default:
             fatal("Unhandled DMA Read. addr: 0x%08X", offset);
         }
@@ -253,9 +258,11 @@ uint32_t get_dma_reg(Interconnect *inter, Addr offset) {
     case 7:
       switch (minor) {
         case 0:
-          return inter->dma.control;
+          return_val = inter->dma.control;
+          break;
         case 4:
-          return get_dma_interrupt(&inter->dma);
+          return_val = get_dma_interrupt(&inter->dma);
+          break;
         default:
           fatal("Unhandled DMA Read. addr: 0x%08X", offset);
       }
@@ -263,11 +270,18 @@ uint32_t get_dma_reg(Interconnect *inter, Addr offset) {
     default:
       fatal("Unhandled DMA Read. addr: 0x%08X", offset);
   }
+
+  log_trace("get_dma_reg: major: 0x%08X, minor: 0x%08X, fetched_val: 0x%08X", major, minor, return_val);
+
+  return return_val;
 }
 
 void set_dma_reg(Interconnect *inter, Addr offset, uint32_t val) {
   uint8_t major = (offset.data & 0x70) >> 4;
   uint8_t minor = offset.data & 0xF;
+
+  log_trace("set_dma_reg: major: 0x%08X, minor: 0x%08X, val: 0x%08X", major, minor, val);
+  LOG_PC();
 
   switch (major) {
     case 0:
@@ -314,11 +328,13 @@ void set_dma_reg(Interconnect *inter, Addr offset, uint32_t val) {
   }
 }
 
-void perform_dma_block(Interconnect *inter, DmaChannel *channel, DmaPort port) {
-  int8_t _increment = 8 * channel->step - 4;
-  uint8_t increment = increment;
-  Addr addr = channel->base_address;
-  size_t transfer_size = get_dma_channel_transfer_size(channel);
+void perform_dma_block(Interconnect *inter, DmaPort port) {
+  log_trace("perform_dma_block called. port: 0x%08X", port);
+  DmaChannel channel = inter->dma.channels[port];
+  int8_t _increment = 8 * channel.step - 4;
+  uint8_t increment = _increment;
+  Addr addr = channel.base_address;
+  size_t transfer_size = get_dma_channel_transfer_size(&channel);
 
   if (transfer_size == 0)
     fatal("perform_dma_block called in LinkedList Mode!");
@@ -326,9 +342,9 @@ void perform_dma_block(Interconnect *inter, DmaChannel *channel, DmaPort port) {
   while (transfer_size > 0) {
     Addr cur_addr = MAKE_Addr(addr.data & 0x001FFFFC);
 
-    switch (channel->direction) {
+    switch (channel.direction) {
       case DmaFromRam:
-        fatal("Unhandled DMA Direction. direction: 0x%08X", channel->direction);
+        fatal("Unhandled DMA Direction. direction: 0x%08X", channel.direction);
       case DmaToRam:
         {
           uint32_t source_word;
@@ -348,11 +364,12 @@ void perform_dma_block(Interconnect *inter, DmaChannel *channel, DmaPort port) {
     transfer_size--;
   }
 
-  channel->enable = 0;
-  channel->trigger = 0;
+  channel.enable = 0;
+  channel.trigger = 0;
 }
 
 void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
+  log_trace("perform_dma_linked_list called. port: 0x%08X", port);
   DmaChannel channel = inter->dma.channels[port];
   Addr addr = MAKE_Addr(channel.base_address.data & 0x001FFFFC);
 
@@ -392,7 +409,7 @@ void perform_dma(Interconnect *inter, DmaChannel *channel, DmaPort port) {
       perform_dma_linked_list(inter, port);
       break;
     default:
-      perform_dma_block(inter, channel, port);
+      perform_dma_block(inter, port);
       break;
   }
 }
