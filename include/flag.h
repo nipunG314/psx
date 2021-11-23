@@ -17,7 +17,7 @@ FlagSet flag_set;
 uint32_t current_pc;
 uint8_t logging_pc;
 
-static inline int get_flag(Flag flag) {
+static inline bool get_flag(Flag flag) {
   return flag_set & flag;
 }
 

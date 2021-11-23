@@ -6,12 +6,12 @@
 DmaChannel init_dma_channel() {
   DmaChannel channel;
 
-  channel.enable = 0;
+  channel.enable = false;
   channel.direction = DmaToRam;
   channel.step = DmaIncrement;
   channel.sync = DmaManual;
-  channel.trigger = 0;
-  channel.chop = 0;
+  channel.trigger = false;
+  channel.chop = false;
   channel.chop_dma_size = 0;
   channel.chop_cpu_size = 0;
   channel.dummy = 0;

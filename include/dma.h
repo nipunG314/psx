@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "instruction.h"
 
@@ -33,12 +34,12 @@ typedef enum DmaPort {
 } DmaPort;
 
 typedef struct DmaChannel {
-  uint8_t enable;
+  bool enable;
   DmaDirection direction;
   DmaStep step;
   DmaSync sync;
-  uint8_t trigger;
-  uint8_t chop;
+  bool trigger;
+  bool chop;
   uint8_t chop_dma_size;
   uint8_t chop_cpu_size;
   uint8_t dummy;
@@ -63,8 +64,8 @@ static inline void set_dma_channel_block_control(DmaChannel *channel, uint32_t v
   channel->block_size = val;
   channel->block_count = (val >> 16);
 }
-static inline uint8_t get_dma_channel_active(DmaChannel *channel) {
-  uint8_t trigger = (channel->sync == DmaManual) ? channel->trigger : 0x1;
+static inline bool get_dma_channel_active(DmaChannel *channel) {
+  bool trigger = (channel->sync == DmaManual) ? channel->trigger : true;
 
   return channel->enable && trigger;
 }
@@ -72,17 +73,17 @@ uint32_t get_dma_channel_transfer_size(DmaChannel *channel);
 
 typedef struct Dma {
   uint32_t control;
-  uint8_t irq_master_en;
+  bool irq_master_en;
   uint8_t irq_channel_en;
   uint8_t irq_channel_flags;
-  uint8_t irq_force;
+  bool irq_force;
   uint8_t irq_dummy;
   DmaChannel channels[DmaChannelCount];
 } Dma;
 
 Dma init_dma();
 
-static inline uint8_t irq_status(Dma *dma) {
+static inline bool irq_status(Dma *dma) {
   uint8_t channel_irq = dma->irq_channel_flags & dma->irq_channel_en;
 
   return (dma->irq_force || (dma->irq_master_en && channel_irq));
