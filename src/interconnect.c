@@ -329,12 +329,14 @@ void set_dma_reg(Interconnect *inter, Addr offset, uint32_t val) {
 }
 
 void perform_dma_block(Interconnect *inter, DmaPort port) {
+  START_LOGGING_PC();
+
   log_trace("perform_dma_block called. port: 0x%08X", port);
-  DmaChannel channel = inter->dma.channels[port];
-  int8_t _increment = 8 * channel.step - 4;
+  DmaChannel *channel = inter->dma.channels + port;
+  int8_t _increment = 8 * channel->step - 4;
   uint8_t increment = _increment;
-  Addr addr = channel.base_address;
-  size_t transfer_size = get_dma_channel_transfer_size(&channel);
+  Addr addr = channel->base_address;
+  uint32_t transfer_size = get_dma_channel_transfer_size(channel);
 
   if (transfer_size == 0)
     fatal("perform_dma_block called in LinkedList Mode!");
@@ -342,9 +344,9 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
   while (transfer_size > 0) {
     Addr cur_addr = MAKE_Addr(addr.data & 0x001FFFFC);
 
-    switch (channel.direction) {
+    switch (channel->direction) {
       case DmaFromRam:
-        fatal("Unhandled DMA Direction. direction: 0x%08X", channel.direction);
+        fatal("Unhandled DMA Direction. direction: 0x%08X", channel->direction);
       case DmaToRam:
         {
           uint32_t source_word;
@@ -363,17 +365,14 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
     addr = MAKE_Addr(addr.data + increment);
     transfer_size--;
   }
-
-  channel.enable = 0;
-  channel.trigger = 0;
 }
 
 void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
   log_trace("perform_dma_linked_list called. port: 0x%08X", port);
-  DmaChannel channel = inter->dma.channels[port];
-  Addr addr = MAKE_Addr(channel.base_address.data & 0x001FFFFC);
+  DmaChannel *channel = inter->dma.channels + port;
+  Addr addr = MAKE_Addr(channel->base_address.data & 0x001FFFFC);
 
-  if (channel.direction == DmaToRam)
+  if (channel->direction == DmaToRam)
     fatal("Invalid DMA Direction LinkedList Mode");
 
   if (port != DmaGpu)
@@ -381,7 +380,10 @@ void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
 
   while (1) {
     uint32_t header = load_ram32(&inter->ram, addr);
-    uint8_t transfer_size = header >> 24;
+    uint32_t transfer_size = header >> 24;
+
+    if (transfer_size == 0)
+      break;
 
     while (transfer_size > 0) {
       addr = MAKE_Addr((addr.data + 4) & 0x001FFFFC);
@@ -395,14 +397,13 @@ void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
 
     if (header & 0x00800000)
       break;
-  }
 
-  channel.enable = 0;
-  channel.trigger = 0;
+    addr = MAKE_Addr(header & 0x001FFFFC);
+  }
 }
 
 void perform_dma(Interconnect *inter, DmaPort port) {
-  START_LOGGING_PC();
+  inter->dma.channels[port].trigger = false;
 
   switch (inter->dma.channels[port].sync) {
     case DmaLinkedList:
@@ -412,6 +413,8 @@ void perform_dma(Interconnect *inter, DmaPort port) {
       perform_dma_block(inter, port);
       break;
   }
+
+  inter->dma.channels[port].enable = false;
 }
 
 void destroy_interconnect(Interconnect *inter) {
