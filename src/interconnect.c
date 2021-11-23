@@ -361,6 +361,8 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
         {
           uint32_t source_word;
           switch (port) {
+            case DmaGpu:
+              log_error("Unhanled DMA_GPU Port. port: 0x%08X", port);
             case DmaOtc:
               source_word = (transfer_size == 1) ? 0x00FFFFFF : ((addr.data - 4) & 0x001FFFFF);
               break;
