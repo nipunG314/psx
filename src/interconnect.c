@@ -346,7 +346,17 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
 
     switch (channel->direction) {
       case DmaFromRam:
-        fatal("Unhandled DMA Direction. direction: 0x%08X", channel->direction);
+        {
+          uint32_t source_word = load_ram32(&inter->ram, cur_addr);
+          switch (port) {
+            case DmaGpu:
+              log_trace("GPU Data. addr: 0x%08X, val: 0x%08X", cur_addr, source_word);
+              break;
+            default:
+              fatal("Unhandled DMA Destination Port. port: 0x%08X", port);
+          }
+        }
+        break;
       case DmaToRam:
         {
           uint32_t source_word;
