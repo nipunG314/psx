@@ -1,5 +1,6 @@
 #include <stdint.h>
 
+#include "instruction.h"
 #include "log.h"
 
 #ifndef FLAGS_H
@@ -14,7 +15,8 @@ typedef enum Flag {
 } Flag;
 
 FlagSet flag_set;
-uint32_t current_pc;
+Addr current_pc;
+Ins current_ins;
 uint8_t logging_pc;
 
 static inline bool get_flag(Flag flag) {
@@ -25,13 +27,16 @@ static inline void set_flag(Flag flag) {
   flag_set = (flag_set | flag);
 }
 
-static inline void set_pc(uint32_t pc) {
+static inline void set_pc(Addr pc) {
   current_pc = pc;
 }
 
+static inline void set_ins(Ins ins) {
+  current_ins = ins;
+}
+
 #define LOG_PC() \
-  if (get_flag(PRINT_PC)) \
-    log_trace("PC: 0x%08X", current_pc)
+  log_trace("PC: 0x%08X", current_pc)
 
 #define START_LOGGING_PC() \
   if (get_flag(PRINT_PC)) \
@@ -40,5 +45,8 @@ static inline void set_pc(uint32_t pc) {
 #define STOP_LOGGING_PC() \
   if (get_flag(PRINT_PC)) \
     logging_pc = 0
+
+#define LOG_INS() \
+  log_ins(current_ins)
 
 #endif

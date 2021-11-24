@@ -7,19 +7,6 @@
 #include "instruction.h"
 #include "flag.h"
 
-void log_ins(Ins ins) {
-  uint32_t func = get_func(ins);
-  log_trace("ins_func: 0x%08X %s", func, funcs[func]);
-  if (func == 0x0) {
-    uint32_t sub_func = get_sub_func(ins);
-    log_trace("ins_sub_func: 0x%08X %s", sub_func, special_funcs[sub_func]);
-  }
-  if (func == 0x10) {
-    log_trace("ins_cop_func: 0x%08X", get_cop_func(ins));
-  }
-  log_trace("instruction: 0x%08X", ins.data);
-}
-
 Cpu init_cpu(char const *bios_filename) {
   Cpu cpu = {0};
 
@@ -77,11 +64,10 @@ void run_next_ins(Cpu *cpu) {
   Ins ins = MAKE_Ins(load32(cpu, cpu->pc));
   cpu->current_pc = cpu->pc;
 
-  if (get_flag(PRINT_PC)) {
-    set_pc(cpu->current_pc.data);
-    if (logging_pc) {
-      LOG_PC();
-    }
+  set_pc(cpu->current_pc);
+  set_ins(ins);
+  if (logging_pc) {
+    LOG_PC();
   }
 
   if (cpu->current_pc.data % 4) {

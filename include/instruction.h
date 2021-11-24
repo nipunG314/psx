@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#include "log.h"
+
 #ifndef INSTRUCTION_H
 #define INSTRUCTION_H
 
@@ -43,5 +45,18 @@ uint32_t get_imm(Ins ins);
 uint32_t get_imm_se(Ins ins);
 uint32_t get_imm_jump(Ins ins);
 uint8_t get_cop_reg(Ins ins);
+
+static inline void log_ins(Ins ins) {
+  uint32_t func = get_func(ins);
+  log_trace("ins_func: 0x%08X %s", func, funcs[func]);
+  if (func == 0x0) {
+    uint32_t sub_func = get_sub_func(ins);
+    log_trace("ins_sub_func: 0x%08X %s", sub_func, special_funcs[sub_func]);
+  }
+  if (func == 0x10) {
+    log_trace("ins_cop_func: 0x%08X", get_cop_func(ins));
+  }
+  log_trace("instruction: 0x%08X", ins.data);
+}
 
 #endif

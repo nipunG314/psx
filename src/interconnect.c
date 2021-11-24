@@ -204,6 +204,8 @@ void store_inter16(Interconnect *inter, Addr addr, uint16_t val) {
     return;
   }
 
+  LOG_PC();
+  LOG_INS();
   fatal("Unhandled store16 call. addr: 0x%08X, val: 0x%08X", addr, val);
 }
 
