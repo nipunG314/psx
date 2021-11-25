@@ -7,7 +7,7 @@ Ram init_ram() {
   Ram ram;
   ram.data = calloc(range(RAM).size, sizeof(uint8_t));
 
-  for(int index = 0; index < RAM_SIZE; index++)
+  for(int index = 0; index < range(RAM).size; index++)
     ram.data[index] = 0xca;
 
   return ram;
