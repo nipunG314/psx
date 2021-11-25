@@ -10,6 +10,7 @@ typedef struct Interconnect {
   Bios bios;
   Ram ram;
   Dma dma;
+  size_t output_log_index;
 } Interconnect;
 
 Interconnect init_interconnect(char const *bios_filename);

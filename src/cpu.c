@@ -5,6 +5,7 @@
 #include "log.h"
 #include "interconnect.h"
 #include "instruction.h"
+#include "output_logger.h"
 #include "flag.h"
 
 Cpu init_cpu(char const *bios_filename) {
@@ -26,6 +27,7 @@ Cpu init_cpu(char const *bios_filename) {
   cpu.inter = init_interconnect(bios_filename);
   cpu.branch = false;
   cpu.delay_slot = false;
+  cpu.output_log_index = init_output_log();
 
   return cpu;
 }
@@ -69,6 +71,11 @@ void run_next_ins(Cpu *cpu) {
   if (logging_pc) {
     LOG_PC();
   }
+  char const *func_name = funcs[get_func(ins)];
+  if (strcmp(func_name, "") == 0)
+    func_name = special_funcs[get_sub_func(ins)];
+
+  LOG_OUTPUT(cpu->output_log_index, "%08x %08x: %s", cpu->current_pc.data, ins.data, func_name);
 
   if (cpu->current_pc.data % 4) {
     exception(cpu, LoadAddressError);
@@ -81,8 +88,6 @@ void run_next_ins(Cpu *cpu) {
 
   if (get_flag(PRINT_INS))
     log_ins(ins);
-  if (get_flag(OUTPUT_LOG) && logging_pc)
-    printf("%08x %08x\n", cpu->pc.data, ins.data);
 
   // Increment PC
   cpu->pc = cpu->next_pc;
@@ -97,6 +102,8 @@ void run_next_ins(Cpu *cpu) {
 
   // Copy output_regs into regs
   memcpy(cpu->regs, cpu->output_regs, sizeof cpu->regs);
+
+  print_output_log(cpu->output_log_index);
 }
 
 void exception(Cpu *cpu, Exception exp) {
@@ -172,8 +179,10 @@ void op_sw(Cpu *cpu, Ins ins) {
     exception(cpu, StoreAddressError);
     return;
   }
-
   store32(cpu, addr, cpu->regs[rt.data]);
+  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
+        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
+  );
 }
 
 void op_sll(Cpu *cpu, Ins ins) {
@@ -388,6 +397,11 @@ void op_lw(Cpu *cpu, Ins ins) {
   }
 
   cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load32(cpu, addr));
+
+  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
+        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
+  );
+
 }
 
 void op_lb(Cpu *cpu, Ins ins) {
@@ -400,8 +414,14 @@ void op_lb(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
 
-  int8_t data = load8(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se));
+  Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
+  int8_t data = load8(cpu, addr);
+
   cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, data);
+  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
+        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
+  );
+
 }
 
 void op_lbu(Cpu *cpu, Ins ins) {
@@ -414,7 +434,12 @@ void op_lbu(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
 
+  Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
   cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load8(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se)));
+  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
+        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
+  );
+
 }
 
 void op_sltu(Cpu *cpu, Ins ins) {
@@ -492,6 +517,10 @@ void op_sh(Cpu *cpu, Ins ins) {
   }
 
   store16(cpu, addr, cpu->regs[rt.data]);
+  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
+        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
+  );
+
 }
 
 void op_sb(Cpu *cpu, Ins ins) {
@@ -504,7 +533,13 @@ void op_sb(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
   uint32_t imm_se = get_imm_se(ins);
 
-  store8(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se), cpu->regs[rt.data]);
+  Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
+
+  store8(cpu, addr, cpu->regs[rt.data]);
+  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
+        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
+  );
+
 }
 
 void op_jr(Cpu *cpu, Ins ins) {
@@ -612,6 +647,10 @@ void op_lh(Cpu *cpu, Ins ins) {
   int16_t val = load16(cpu, addr); 
 
   cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, val); 
+  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
+        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
+  );
+
 }
 
 void op_lhu(Cpu *cpu, Ins ins) {
@@ -632,6 +671,10 @@ void op_lhu(Cpu *cpu, Ins ins) {
   }
 
   cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load16(cpu, addr));
+  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
+        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
+  );
+
 }
 
 void op_lwl(Cpu *cpu, Ins ins) {

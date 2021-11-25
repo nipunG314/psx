@@ -23,6 +23,7 @@ typedef struct Cpu {
   Interconnect inter;
   bool branch;
   bool delay_slot;
+  size_t output_log_index;
 } Cpu;
 
 Cpu init_cpu(char const *bios_filename);
