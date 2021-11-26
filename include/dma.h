@@ -46,6 +46,7 @@ typedef struct DmaChannel {
   Addr base_address;
   uint16_t block_size;
   uint16_t block_count;
+  DmaPort port;
 } DmaChannel;
 
 DmaChannel init_dma_channel();

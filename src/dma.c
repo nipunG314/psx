@@ -18,6 +18,7 @@ DmaChannel init_dma_channel() {
   channel.base_address = MAKE_Addr(0);
   channel.block_size = 0;
   channel.block_count = 0;
+  channel.port = 0;
 
   return channel;
 }
@@ -82,6 +83,8 @@ uint32_t get_dma_channel_transfer_size(DmaChannel *channel) {
 Dma init_dma() {
   Dma dma;
   dma.control = 0x07654321;
+  for(size_t index = 0; index < DmaChannelCount; index++)
+    dma.channels[index].port = index;
 
   return dma;
 }
