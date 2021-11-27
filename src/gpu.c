@@ -1,4 +1,7 @@
+#include <stdlib.h>
+
 #include "gpu.h"
+#include "log.h"
 
 Gpu init_gpu() {
   Gpu gpu;
@@ -70,3 +73,53 @@ uint32_t gpu_status(Gpu *gpu) {
 
   return status;
 }
+
+void gp0_draw_mode(Gpu *gpu, uint32_t val) {
+  gpu->page_base_x = (val & 0xF);
+  gpu->page_base_y = ((val >> 4) & 1);
+  switch ((val >> 5) & 3) {
+    case 0:
+      gpu->semi_transparency_blend = GpuTransparencyMean;
+      break;
+    case 1:
+      gpu->semi_transparency_blend = GpuTransparencySum;
+      break;
+    case 2:
+      gpu->semi_transparency_blend = GpuTransparencyDiff;
+      break;
+    case 3:
+      gpu->semi_transparency_blend = GpuTransparencySumQuarter;
+      break;
+  }
+  switch ((val >> 7) & 3) {
+    case 0:
+      gpu->texture_depth = GpuTexture4Bits;
+      break;
+    case 1:
+      gpu->texture_depth = GpuTexture8Bits;
+      break;
+    case 2:
+      gpu->texture_depth = GpuTexture15Bits;
+      break;
+    default:
+      fatal("Unhandled Texture Depth: %x", (val >> 7) & 3)
+  }
+  gpu->dithering = (val >> 9) & 1;
+  gpu->draw_to_display = (val >> 10) & 1;
+  gpu->texture_disabled = (val >> 11) & 1;
+  gpu->rectangle_texture_x_flip = (val >> 12) & 1;
+  gpu->rectangle_texture_y_flip = (val >> 13) & 1;
+}
+
+void gpu_gp0(Gpu *gpu, uint32_t val) {
+  uint8_t opcode = (val >> 24) & 0xFF;
+
+  switch (opcode) {
+    case 0xe1:
+      gp0_draw_mode(gpu, val);
+      break;
+    default:
+      fatal("Unhandled GP0 Command: 0x%08X", val);
+  }
+}
+

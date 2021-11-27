@@ -1,6 +1,7 @@
 #include "bios.h"
 #include "ram.h"
 #include "dma.h"
+#include "gpu.h"
 #include "instruction.h"
 
 #ifndef INTERCONNECT_H
@@ -10,6 +11,7 @@ typedef struct Interconnect {
   Bios bios;
   Ram ram;
   Dma dma;
+  Gpu gpu;
   size_t output_log_index;
 } Interconnect;
 

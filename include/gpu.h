@@ -80,9 +80,12 @@ typedef struct Gpu {
   bool display_disabled;
   bool interrupt_active;
   GpuDmaDirection dma_direction;
+  bool rectangle_texture_x_flip;
+  bool rectangle_texture_y_flip;
 } Gpu;
 
 Gpu init_gpu();
 uint32_t gpu_status(Gpu *gpu);
+void gpu_gp0(Gpu *gpu, uint32_t val);
 
 #endif

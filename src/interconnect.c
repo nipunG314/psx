@@ -29,6 +29,7 @@ Interconnect init_interconnect(char const *bios_filename) {
   inter.bios = init_bios(bios_filename);
   inter.ram = init_ram();
   inter.dma = init_dma();
+  inter.gpu = init_gpu();
   inter.output_log_index = init_output_log();
 
   return inter;
@@ -171,7 +172,13 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
 
   offset = range_contains(range(GPU), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to GPU register. addr: 0x%08X. val: 0x%08X", addr, val);
+    switch (offset) {
+      case 0:
+        gpu_gp0(&inter->gpu, val);
+        break;
+      default:
+        fatal("Unhandled Write to GPU register. addr: 0x%08X. val: 0x%08X", addr, val);
+    }
     return;
   }
 
