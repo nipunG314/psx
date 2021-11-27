@@ -454,6 +454,7 @@ void perform_dma(Interconnect *inter, DmaPort port) {
   }
 
   inter->dma.channels[port].enable = false;
+  // ToDo: Set correct values for other fields (i.e. interrupts)
 }
 
 void destroy_interconnect(Interconnect *inter) {

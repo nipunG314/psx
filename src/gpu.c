@@ -171,6 +171,8 @@ void gp1_reset(Gpu *gpu, uint32_t val) {
   gpu->display_line_start = 0x10;
   gpu->display_line_end = 0x100;
   gpu->display_depth = GpuDisplayDepth15Bits;
+
+  // ToDo: Clear FIFO list and GPU Cache
 }
 
 void gpu_gp1(Gpu *gpu, uint32_t val) {
