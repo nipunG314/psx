@@ -176,8 +176,9 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
       case 0:
         gpu_gp0(&inter->gpu, val);
         break;
-      default:
-        fatal("Unhandled Write to GPU register. addr: 0x%08X. val: 0x%08X", addr, val);
+      case 1:
+        gpu_gp1(&inter->gpu, val);
+        break;
     }
     return;
   }

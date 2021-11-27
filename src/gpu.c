@@ -24,6 +24,24 @@ Gpu init_gpu() {
   gpu.display_disabled = true;
   gpu.interrupt_active = false;
   gpu.dma_direction = GpuDmaDirOff;
+  gpu.rectangle_texture_x_flip = false;
+  gpu.rectangle_texture_y_flip = false;
+  gpu.texture_window_x_mask = 0;
+  gpu.texture_window_y_mask = 0;
+  gpu.texture_window_x_offset = 0;
+  gpu.texture_window_y_offset = 0;
+  gpu.drawing_area_left = 0;
+  gpu.drawing_area_top = 0;
+  gpu.drawing_area_right = 0;
+  gpu.drawing_area_bottom = 0;
+  gpu.drawing_x_offset = 0;
+  gpu.drawing_y_offset = 0;
+  gpu.display_vram_x_start = 0;
+  gpu.display_vram_y_start = 0;
+  gpu.display_hor_start = 0;
+  gpu.display_hor_end = 0;
+  gpu.display_line_start = 0;
+  gpu.display_line_end = 0;
 
   return gpu;
 }
@@ -122,6 +140,48 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
       break;
     default:
       fatal("Unhandled GP0 Command: 0x%08X", val);
+  }
+}
+
+void gp1_reset(Gpu *gpu, uint32_t val) {
+  gpu->interrupt_active = false;
+  gpu->page_base_x = gpu->page_base_y = 0;
+  gpu->semi_transparency_blend = GpuTransparencyMean;
+  gpu->texture_depth = GpuTexture4Bits;
+  gpu->texture_window_x_mask = gpu->texture_window_y_mask = 0;
+  gpu->texture_window_x_offset = gpu->texture_window_y_offset = 0;
+  gpu->dithering = false;
+  gpu->draw_to_display = false;
+  gpu->texture_disabled = false;
+  gpu->rectangle_texture_x_flip = gpu->rectangle_texture_y_flip = false;
+  gpu->drawing_area_top = gpu->drawing_area_bottom = 0;
+  gpu->drawing_area_left = gpu->drawing_area_right = 0;
+  gpu->drawing_x_offset = gpu->drawing_y_offset = 0;
+  gpu->force_set_mask_bit = false;
+  gpu->preserve_masked_pixels = false;
+  gpu->dma_direction = GpuDmaDirOff;
+  gpu->display_disabled = true;
+  gpu->display_vram_x_start = gpu->display_vram_y_start = 0;
+  gpu->hres = MAKE_GpuHRes(0);
+  gpu->vres = GpuVertical240Lines;
+  gpu->video_mode = GpuNTSC;
+  gpu->interlaced = true;
+  gpu->display_hor_start = 0x200;
+  gpu->display_hor_end = 0xc00;
+  gpu->display_line_start = 0x10;
+  gpu->display_line_end = 0x100;
+  gpu->display_depth = GpuDisplayDepth15Bits;
+}
+
+void gpu_gp1(Gpu *gpu, uint32_t val) {
+  uint8_t opcode = (val >> 24) & 0xFF;
+
+  switch (opcode) {
+    case 0x00:
+      gp1_reset(gpu, val);
+      break;
+    default:
+      fatal("Unhandled GP1 Command: 0x%08X", val);
   }
 }
 
