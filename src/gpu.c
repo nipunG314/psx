@@ -115,6 +115,8 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
   uint8_t opcode = (val >> 24) & 0xFF;
 
   switch (opcode) {
+    case 0x00:
+      break;
     case 0xe1:
       gp0_draw_mode(gpu, val);
       break;
