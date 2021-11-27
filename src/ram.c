@@ -22,12 +22,6 @@ uint32_t load_ram32(Ram *ram, Addr offset) {
 
   uint32_t ret = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 
-  if (ret == 0x8A130C38) {
-    log_trace("FLAAGGGGGGGGGGGGG");
-    LOG_PC();
-    LOG_INS();
-  }
-
   return ret;
 }
 
@@ -44,12 +38,6 @@ uint8_t load_ram8(Ram *ram, Addr offset) {
 }
 
 void store_ram32(Ram *ram, Addr offset, uint32_t val) {
-
-  if (val == 0x8A130C38) {
-    log_trace("FLAAGGGGGGGGGGGGG");
-    LOG_PC();
-    LOG_INS();
-  }
 
   uint8_t b0 = val;
   uint8_t b1 = val >> 8;

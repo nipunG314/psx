@@ -285,17 +285,12 @@ uint32_t get_dma_reg(Interconnect *inter, Addr offset) {
       fatal("Unhandled DMA Read. addr: 0x%08X", offset);
   }
 
-  log_trace("get_dma_reg: major: 0x%08X, minor: 0x%08X, fetched_val: 0x%08X", major, minor, return_val);
-
   return return_val;
 }
 
 void set_dma_reg(Interconnect *inter, Addr offset, uint32_t val) {
   uint8_t major = (offset.data & 0x70) >> 4;
   uint8_t minor = offset.data & 0xF;
-
-  log_trace("set_dma_reg: major: 0x%08X, minor: 0x%08X, val: 0x%08X", major, minor, val);
-  LOG_PC();
 
   switch (major) {
     case 0:
@@ -345,7 +340,6 @@ void set_dma_reg(Interconnect *inter, Addr offset, uint32_t val) {
 void perform_dma_block(Interconnect *inter, DmaPort port) {
   START_LOGGING_PC();
 
-  log_trace("perform_dma_block called. port: 0x%08X", port);
   DmaChannel *channel = inter->dma.channels + port;
   int8_t _increment = 8 * channel->step - 4;
   uint8_t increment = _increment;
@@ -398,7 +392,6 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
 }
 
 void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
-  log_trace("perform_dma_linked_list called. port: 0x%08X", port);
   DmaChannel *channel = inter->dma.channels + port;
   Addr addr = MAKE_Addr(channel->base_address.data & 0x001FFFFC);
 
