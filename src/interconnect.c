@@ -61,12 +61,9 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
   if (offset >= 0) {
     switch (offset) {
       case 0:
-        return gpu_status(&inter->gpu);
+        return gpu_read(&inter->gpu);
       case 4:
-        log_error("Unhandled read from GPU. addr: 0x%08X", addr);
-        // TempFix: Return 0x10000000 when offset == 4
-        // Tells BIOS that its ready DMA transfer
-        return 0x1C000000;
+        return gpu_status(&inter->gpu);
     }
   }
 

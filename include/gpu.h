@@ -102,6 +102,7 @@ typedef struct Gpu {
 
 Gpu init_gpu();
 uint32_t gpu_status(Gpu *gpu);
+uint32_t gpu_read(Gpu *gpu);
 void gpu_gp0(Gpu *gpu, uint32_t val);
 void gpu_gp1(Gpu *gpu, uint32_t val);
 

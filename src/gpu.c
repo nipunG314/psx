@@ -92,6 +92,12 @@ uint32_t gpu_status(Gpu *gpu) {
   return status;
 }
 
+uint32_t gpu_read(Gpu *gpu) {
+  // TempFix: Return actual GPUREAD data once it
+  // has been initialized
+  return 0;
+}
+
 void gp0_draw_mode(Gpu *gpu, uint32_t val) {
   gpu->page_base_x = (val & 0xF);
   gpu->page_base_y = ((val >> 4) & 1);
