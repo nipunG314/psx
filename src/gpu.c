@@ -140,6 +140,10 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
 
   switch (opcode) {
     case 0x00:
+      // NOP
+      break;
+    case 0x01:
+      // Clear Cache. Not Implemented.
       break;
     case 0xe1:
       gp0_draw_mode(gpu, val);
