@@ -77,7 +77,10 @@ uint32_t gpu_status(Gpu *gpu) {
   status |= ((uint32_t)gpu->interlace_field) << 13;
   status |= ((uint32_t)gpu->texture_disabled) << 15;
   status |= hres_status(gpu->hres);
-  status |= ((uint32_t)gpu->vres) << 19;
+  // TempFix: Setting bit 19 deadlocks the BIOS
+  // without proper GPU Timings. For now, don't set bit
+  // 19.
+  //status |= ((uint32_t)gpu->vres) << 19;
   status |= ((uint32_t)gpu->video_mode) << 20;
   status |= ((uint32_t)gpu->display_depth) << 21;
   status |= ((uint32_t)gpu->interlaced) << 22;
@@ -190,6 +193,10 @@ void gp0_mask_bit_setting(Gpu *gpu, uint32_t val) {
   gpu->preserve_masked_pixels = val & 2;
 }
 
+void gp0_monochrome_rect(Gpu *gpu, uint32_t val) {
+  log_trace("STUB: Draw Monochrome Rect!");
+}
+
 void gpu_gp0(Gpu *gpu, uint32_t val) {
   if (gpu->gp0_words_remaining == 0) {
     uint8_t opcode = (val >> 24) & 0xFF;
@@ -204,6 +211,10 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
       case 0x01:
         gpu->gp0_method = gp0_clear_cache;
         gpu->gp0_words_remaining = 1;
+        break;
+      case 0x60:
+        gpu->gp0_method = gp0_monochrome_rect;
+        gpu->gp0_words_remaining = 3;
         break;
       case 0xe1:
         gpu->gp0_method = gp0_draw_mode;
