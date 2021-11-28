@@ -61,6 +61,24 @@ typedef enum GpuDmaDirection {
   GpuDmaDirOffVRamToCpu
 } GpuDmaDirection;
 
+typedef struct GpuCommandBuffer {
+  uint32_t commands[12];
+  uint8_t command_count;
+} GpuCommandBuffer;
+
+GpuCommandBuffer init_command_buffer();
+static inline void command_buffer_clear(GpuCommandBuffer *command_buffer) {
+  command_buffer->command_count = 0;
+}
+static inline void push_command(GpuCommandBuffer *command_buffer, uint32_t command) {
+  command_buffer->commands[command_buffer->command_count] = command;
+  command_buffer->command_count++;
+}
+
+typedef struct Gpu Gpu;
+
+typedef void (*GP0Method)(Gpu *gpu, uint32_t val);
+
 typedef struct Gpu {
   uint8_t page_base_x;
   uint8_t page_base_y;
@@ -98,6 +116,9 @@ typedef struct Gpu {
   uint16_t display_hor_end;
   uint16_t display_line_start;
   uint16_t display_line_end;
+  GpuCommandBuffer gp0_command_buffer;
+  uint8_t gp0_words_remaining;
+  GP0Method gp0_method;
   size_t output_log_index;
 } Gpu;
 

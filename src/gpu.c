@@ -1,8 +1,20 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "gpu.h"
 #include "log.h"
 #include "output_logger.h"
+
+GpuCommandBuffer init_command_buffer() {
+  GpuCommandBuffer buffer;
+
+  memset(buffer.commands, 0, sizeof buffer.commands);
+  buffer.command_count = 0;
+
+  return buffer;
+}
+
+void gp0_nop(Gpu *gpu, uint32_t val);
 
 Gpu init_gpu() {
   Gpu gpu;
@@ -43,6 +55,9 @@ Gpu init_gpu() {
   gpu.display_hor_end = 0;
   gpu.display_line_start = 0;
   gpu.display_line_end = 0;
+  gpu.gp0_command_buffer = init_command_buffer();
+  gpu.gp0_words_remaining = 0;
+  gpu.gp0_method = gp0_nop;
   gpu.output_log_index = init_output_log();
 
   return gpu;
@@ -98,6 +113,12 @@ uint32_t gpu_read(Gpu *gpu) {
   // TempFix: Return actual GPUREAD data once it
   // has been initialized
   return 0;
+}
+
+void gp0_nop(Gpu *gpu, uint32_t val) {
+}
+
+void gp0_clear_cache(Gpu *gpu, uint32_t val) {
 }
 
 void gp0_draw_mode(Gpu *gpu, uint32_t val) {
@@ -170,40 +191,58 @@ void gp0_mask_bit_setting(Gpu *gpu, uint32_t val) {
 }
 
 void gpu_gp0(Gpu *gpu, uint32_t val) {
-  uint8_t opcode = (val >> 24) & 0xFF;
+  if (gpu->gp0_words_remaining == 0) {
+    uint8_t opcode = (val >> 24) & 0xFF;
 
-  LOG_OUTPUT(gpu->output_log_index, "GP0 Command: %08x", val);
+    LOG_OUTPUT(gpu->output_log_index, "GP0 Command: %08x", val);
 
-  switch (opcode) {
-    case 0x00:
-      // NOP
-      break;
-    case 0x01:
-      // Clear Cache. Not Implemented.
-      break;
-    case 0xe1:
-      gp0_draw_mode(gpu, val);
-      break;
-    case 0xe2:
-      gp0_texture_window(gpu, val);
-      break;
-    case 0xe3:
-      gp0_set_drawing_top_left(gpu, val);
-      break;
-    case 0xe4:
-      gp0_set_drawing_bottom_right(gpu, val);
-      break;
-    case 0xe5:
-      gp0_set_drawing_offsets(gpu, val);
-      break;
-    case 0xe6:
-      gp0_mask_bit_setting(gpu, val);
-      break;
-    default:
-      fatal("Unhandled GP0 Command: 0x%08X", val);
+    switch (opcode) {
+      case 0x00:
+        gpu->gp0_method = gp0_nop;
+        gpu->gp0_words_remaining = 1;
+        break;
+      case 0x01:
+        gpu->gp0_method = gp0_clear_cache;
+        gpu->gp0_words_remaining = 1;
+        break;
+      case 0xe1:
+        gpu->gp0_method = gp0_draw_mode;
+        gpu->gp0_words_remaining = 1;
+        break;
+      case 0xe2:
+        gpu->gp0_method = gp0_texture_window;
+        gpu->gp0_words_remaining = 1;
+        break;
+      case 0xe3:
+        gpu->gp0_method = gp0_set_drawing_top_left;
+        gpu->gp0_words_remaining = 1;
+        break;
+      case 0xe4:
+        gpu->gp0_method = gp0_set_drawing_bottom_right;
+        gpu->gp0_words_remaining = 1;
+        break;
+      case 0xe5:
+        gpu->gp0_method = gp0_set_drawing_offsets;
+        gpu->gp0_words_remaining = 1;
+        break;
+      case 0xe6:
+        gpu->gp0_method = gp0_mask_bit_setting;
+        gpu->gp0_words_remaining = 1;
+        break;
+      default:
+        fatal("Unhandled GP0 Command: 0x%08X", val);
+    }
+
+    command_buffer_clear(&gpu->gp0_command_buffer);
+
+    print_output_log(gpu->output_log_index);
   }
 
-  print_output_log(gpu->output_log_index);
+  push_command(&gpu->gp0_command_buffer, val);
+  gpu->gp0_words_remaining -= 1;
+
+  if (gpu->gp0_words_remaining == 0)
+    gpu->gp0_method(gpu, val);
 }
 
 void gp1_reset(Gpu *gpu, uint32_t val) {
