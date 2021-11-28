@@ -271,6 +271,21 @@ void gp1_display_mode(Gpu *gpu, uint32_t val) {
     fatal("Unsupported Display Mode: 0x%08X", val);
 }
 
+void gp1_display_vram_start(Gpu *gpu, uint32_t val) {
+  gpu->display_vram_x_start = val & 0x3FE;
+  gpu->display_vram_y_start = (val >> 10) & 0x1FF;
+}
+
+void gp1_display_horizontal_range(Gpu *gpu, uint32_t val) {
+  gpu->display_hor_start = val & 0xFFF;
+  gpu->display_hor_end = (val >> 12) & 0xFFF;
+}
+
+void gp1_display_vertical_range(Gpu *gpu, uint32_t val) {
+  gpu->display_line_start = val & 0x3FF;
+  gpu->display_line_end = (val >> 10) & 0x3FF;
+}
+
 void gpu_gp1(Gpu *gpu, uint32_t val) {
   uint8_t opcode = (val >> 24) & 0xFF;
 
@@ -282,6 +297,15 @@ void gpu_gp1(Gpu *gpu, uint32_t val) {
       break;
     case 0x04:
       gp1_dma_direction(gpu, val);
+      break;
+    case 0x05:
+      gp1_display_vram_start(gpu, val);
+      break;
+    case 0x06:
+      gp1_display_horizontal_range(gpu, val);
+      break;
+    case 0x07:
+      gp1_display_vertical_range(gpu, val);
       break;
     case 0x08:
       gp1_display_mode(gpu, val);
