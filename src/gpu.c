@@ -137,6 +137,16 @@ void gp0_draw_mode(Gpu *gpu, uint32_t val) {
   gpu->rectangle_texture_y_flip = (val >> 13) & 1;
 }
 
+void gp0_set_drawing_top_left(Gpu *gpu, uint32_t val) {
+  gpu->drawing_area_top = (val >> 10) & 0x3FF;
+  gpu->drawing_area_left = val & 0x3FF;
+}
+
+void gp0_set_drawing_bottom_right(Gpu *gpu, uint32_t val) {
+  gpu->drawing_area_bottom = (val >> 10) & 0x3FF;
+  gpu->drawing_area_right = val & 0x3FF;
+}
+
 void gpu_gp0(Gpu *gpu, uint32_t val) {
   uint8_t opcode = (val >> 24) & 0xFF;
 
@@ -151,6 +161,12 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
       break;
     case 0xe1:
       gp0_draw_mode(gpu, val);
+      break;
+    case 0xe3:
+      gp0_set_drawing_top_left(gpu, val);
+      break;
+    case 0xe4:
+      gp0_set_drawing_bottom_right(gpu, val);
       break;
     default:
       fatal("Unhandled GP0 Command: 0x%08X", val);
