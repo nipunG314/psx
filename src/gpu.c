@@ -147,6 +147,16 @@ void gp0_set_drawing_bottom_right(Gpu *gpu, uint32_t val) {
   gpu->drawing_area_right = val & 0x3FF;
 }
 
+void gp0_set_drawing_offsets(Gpu *gpu, uint32_t val) {
+  uint16_t x = val & 0x7FF;
+  uint16_t y = (val >> 11) & 0x7FF;
+
+  gpu->drawing_x_offset = x << 5;
+  gpu->drawing_y_offset = y << 5;
+  gpu->drawing_x_offset = gpu->drawing_x_offset >> 5;
+  gpu->drawing_y_offset = gpu->drawing_y_offset >> 5;
+}
+
 void gpu_gp0(Gpu *gpu, uint32_t val) {
   uint8_t opcode = (val >> 24) & 0xFF;
 
@@ -167,6 +177,9 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
       break;
     case 0xe4:
       gp0_set_drawing_bottom_right(gpu, val);
+      break;
+    case 0xe5:
+      gp0_set_drawing_offsets(gpu, val);
       break;
     default:
       fatal("Unhandled GP0 Command: 0x%08X", val);
