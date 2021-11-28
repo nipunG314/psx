@@ -238,6 +238,39 @@ void gp1_reset(Gpu *gpu, uint32_t val) {
   // ToDo: Clear FIFO list and GPU Cache
 }
 
+void gp1_dma_direction(Gpu *gpu, uint32_t val) {
+  switch (val & 3) {
+    case 0:
+      gpu->dma_direction = GpuDmaDirOff;
+      break;
+    case 1:
+      gpu->dma_direction = GpuDmaDirFifo;
+      break;
+    case 2:
+      gpu->dma_direction = GpuDmaDirCpuToGp0;
+      break;
+    case 3:
+      gpu->dma_direction = GpuDmaDirOffVRamToCpu;
+      break;
+    default:
+      fatal("Unknown GPU DMA Direction: %x", val & 3);
+  }
+}
+
+void gp1_display_mode(Gpu *gpu, uint32_t val) {
+  uint8_t hr1 = val & 3;
+  uint8_t hr2 = (val >> 6) & 1;
+
+  gpu->hres = hres_from_fields(hr1, hr2);
+  gpu->vres = (val & 0x4) ? GpuVertical480Lines : GpuVertical240Lines;
+  gpu->video_mode = (val & 0x8) ? GpuPAL : GpuNTSC;
+  gpu->display_depth = (val & 0x10) ? GpuDisplayDepth15Bits : GpuDisplayDepth24Bits;
+  gpu->interlaced = val & 0x20;
+
+  if (val & 0x80)
+    fatal("Unsupported Display Mode: 0x%08X", val);
+}
+
 void gpu_gp1(Gpu *gpu, uint32_t val) {
   uint8_t opcode = (val >> 24) & 0xFF;
 
@@ -246,6 +279,12 @@ void gpu_gp1(Gpu *gpu, uint32_t val) {
   switch (opcode) {
     case 0x00:
       gp1_reset(gpu, val);
+      break;
+    case 0x04:
+      gp1_dma_direction(gpu, val);
+      break;
+    case 0x08:
+      gp1_display_mode(gpu, val);
       break;
     default:
       fatal("Unhandled GP1 Command: 0x%08X", val);
