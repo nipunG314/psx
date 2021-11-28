@@ -372,7 +372,7 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
           uint32_t source_word;
           switch (port) {
             case DmaGpu:
-              log_error("Unhanled DMA_GPU Port. port: 0x%08X", port);
+              log_error("Unhandled DMA_GPU Port. port: 0x%08X", port);
             case DmaOtc:
               source_word = (transfer_size == 1) ? 0x00FFFFFF : ((addr.data - 4) & 0x001FFFFF);
               break;
@@ -432,8 +432,6 @@ void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
 }
 
 void perform_dma(Interconnect *inter, DmaPort port) {
-  inter->dma.channels[port].trigger = false;
-
   switch (inter->dma.channels[port].sync) {
     case DmaLinkedList:
       perform_dma_linked_list(inter, port);
@@ -443,6 +441,7 @@ void perform_dma(Interconnect *inter, DmaPort port) {
       break;
   }
 
+  inter->dma.channels[port].trigger = false;
   inter->dma.channels[port].enable = false;
   // ToDo: Set correct values for other fields (i.e. interrupts)
 }
