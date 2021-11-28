@@ -157,6 +157,18 @@ void gp0_set_drawing_offsets(Gpu *gpu, uint32_t val) {
   gpu->drawing_y_offset = gpu->drawing_y_offset >> 5;
 }
 
+void gp0_texture_window(Gpu *gpu, uint32_t val) {
+  gpu->texture_window_x_mask = val & 0x1F;
+  gpu->texture_window_y_mask = (val >> 5) & 0x1F;
+  gpu->texture_window_x_offset = (val >> 10) & 0x1F;
+  gpu->texture_window_y_offset = (val >> 15) & 0x1F;
+}
+
+void gp0_mask_bit_setting(Gpu *gpu, uint32_t val) {
+  gpu->force_set_mask_bit = val & 1;
+  gpu->preserve_masked_pixels = val & 2;
+}
+
 void gpu_gp0(Gpu *gpu, uint32_t val) {
   uint8_t opcode = (val >> 24) & 0xFF;
 
@@ -172,6 +184,9 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
     case 0xe1:
       gp0_draw_mode(gpu, val);
       break;
+    case 0xe2:
+      gp0_texture_window(gpu, val);
+      break;
     case 0xe3:
       gp0_set_drawing_top_left(gpu, val);
       break;
@@ -180,6 +195,9 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
       break;
     case 0xe5:
       gp0_set_drawing_offsets(gpu, val);
+      break;
+    case 0xe6:
+      gp0_mask_bit_setting(gpu, val);
       break;
     default:
       fatal("Unhandled GP0 Command: 0x%08X", val);
