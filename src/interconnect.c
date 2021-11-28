@@ -360,7 +360,7 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
           uint32_t source_word = load_ram32(&inter->ram, cur_addr);
           switch (port) {
             case DmaGpu:
-              log_trace("GPU Data. addr: 0x%08X, val: 0x%08X", cur_addr, source_word);
+              gpu_gp0(&inter->gpu, source_word);
               break;
             default:
               fatal("Unhandled DMA Destination Port. port: 0x%08X", port);
@@ -417,7 +417,7 @@ void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
 
       uint32_t command = load_ram32(&inter->ram, addr);
 
-      log_error("GPU Command: 0x%08X", command);
+      gpu_gp0(&inter->gpu, command);
 
       transfer_size--;
     }
