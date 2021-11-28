@@ -2,6 +2,7 @@
 
 #include "gpu.h"
 #include "log.h"
+#include "output_logger.h"
 
 Gpu init_gpu() {
   Gpu gpu;
@@ -42,6 +43,7 @@ Gpu init_gpu() {
   gpu.display_hor_end = 0;
   gpu.display_line_start = 0;
   gpu.display_line_end = 0;
+  gpu.output_log_index = init_output_log();
 
   return gpu;
 }
@@ -138,6 +140,8 @@ void gp0_draw_mode(Gpu *gpu, uint32_t val) {
 void gpu_gp0(Gpu *gpu, uint32_t val) {
   uint8_t opcode = (val >> 24) & 0xFF;
 
+  LOG_OUTPUT(gpu->output_log_index, "GP0 Command: %08x", val);
+
   switch (opcode) {
     case 0x00:
       // NOP
@@ -151,6 +155,8 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
     default:
       fatal("Unhandled GP0 Command: 0x%08X", val);
   }
+
+  print_output_log(gpu->output_log_index);
 }
 
 void gp1_reset(Gpu *gpu, uint32_t val) {
@@ -188,6 +194,8 @@ void gp1_reset(Gpu *gpu, uint32_t val) {
 void gpu_gp1(Gpu *gpu, uint32_t val) {
   uint8_t opcode = (val >> 24) & 0xFF;
 
+  LOG_OUTPUT(gpu->output_log_index, "GP1 Command: %08x", val);
+
   switch (opcode) {
     case 0x00:
       gp1_reset(gpu, val);
@@ -195,5 +203,7 @@ void gpu_gp1(Gpu *gpu, uint32_t val) {
     default:
       fatal("Unhandled GP1 Command: 0x%08X", val);
   }
+
+  print_output_log(gpu->output_log_index);
 }
 

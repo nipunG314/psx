@@ -98,6 +98,7 @@ typedef struct Gpu {
   uint16_t display_hor_end;
   uint16_t display_line_start;
   uint16_t display_line_end;
+  size_t output_log_index;
 } Gpu;
 
 Gpu init_gpu();
