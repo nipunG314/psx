@@ -173,8 +173,7 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
       case 0:
         gpu_gp0(&inter->gpu, val);
         break;
-      case 1:
-        fatal("Reached GP1");
+      case 4:
         gpu_gp1(&inter->gpu, val);
         break;
     }
