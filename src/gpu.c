@@ -58,6 +58,7 @@ Gpu init_gpu() {
   gpu.gp0_command_buffer = init_command_buffer();
   gpu.gp0_words_remaining = 0;
   gpu.gp0_method = gp0_nop;
+  gpu.gp0_mode = Gp0CommandMode;
   gpu.output_log_index = init_output_log();
 
   return gpu;
@@ -197,6 +198,17 @@ void gp0_monochrome_rect(Gpu *gpu, uint32_t val) {
   log_trace("STUB: Draw Monochrome Rect!");
 }
 
+void gp0_image_load(Gpu *gpu, uint32_t val) {
+  uint32_t width = gpu->gp0_command_buffer.commands[2] & 0xFFFF;
+  uint32_t height = gpu->gp0_command_buffer.commands[2] >> 16;
+
+  uint32_t size = width * height;
+  size = (size + 1) & ~1;
+
+  gpu->gp0_words_remaining = size / 2;
+  gpu->gp0_mode = Gp0ImageLoadMode;
+}
+
 void gpu_gp0(Gpu *gpu, uint32_t val) {
   if (gpu->gp0_words_remaining == 0) {
     uint8_t opcode = (val >> 24) & 0xFF;
@@ -216,27 +228,31 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
         gpu->gp0_method = gp0_monochrome_rect;
         gpu->gp0_words_remaining = 3;
         break;
-      case 0xe1:
+      case 0xA0:
+        gpu->gp0_method = gp0_image_load;
+        gpu->gp0_words_remaining = 3;
+        break;
+      case 0xE1:
         gpu->gp0_method = gp0_draw_mode;
         gpu->gp0_words_remaining = 1;
         break;
-      case 0xe2:
+      case 0xE2:
         gpu->gp0_method = gp0_texture_window;
         gpu->gp0_words_remaining = 1;
         break;
-      case 0xe3:
+      case 0xE3:
         gpu->gp0_method = gp0_set_drawing_top_left;
         gpu->gp0_words_remaining = 1;
         break;
-      case 0xe4:
+      case 0xE4:
         gpu->gp0_method = gp0_set_drawing_bottom_right;
         gpu->gp0_words_remaining = 1;
         break;
-      case 0xe5:
+      case 0xE5:
         gpu->gp0_method = gp0_set_drawing_offsets;
         gpu->gp0_words_remaining = 1;
         break;
-      case 0xe6:
+      case 0xE6:
         gpu->gp0_method = gp0_mask_bit_setting;
         gpu->gp0_words_remaining = 1;
         break;
@@ -249,11 +265,20 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
     print_output_log(gpu->output_log_index);
   }
 
-  push_command(&gpu->gp0_command_buffer, val);
   gpu->gp0_words_remaining -= 1;
 
-  if (gpu->gp0_words_remaining == 0)
-    gpu->gp0_method(gpu, val);
+  switch (gpu->gp0_mode) {
+    case Gp0CommandMode:
+      push_command(&gpu->gp0_command_buffer, val);
+      if (gpu->gp0_words_remaining == 0)
+        gpu->gp0_method(gpu, val);
+      break;
+    case Gp0ImageLoadMode:
+      // ToDo: Load image data into VRAM
+      if (gpu->gp0_words_remaining == 0)
+        gpu->gp0_mode = Gp0CommandMode;
+      break;
+  }
 }
 
 void gp1_reset(Gpu *gpu, uint32_t val) {

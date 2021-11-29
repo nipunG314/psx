@@ -75,6 +75,11 @@ static inline void push_command(GpuCommandBuffer *command_buffer, uint32_t comma
   command_buffer->command_count++;
 }
 
+typedef enum GP0Mode {
+  Gp0CommandMode,
+  Gp0ImageLoadMode
+} GP0Mode;
+
 typedef struct Gpu Gpu;
 
 typedef void (*GP0Method)(Gpu *gpu, uint32_t val);
@@ -117,8 +122,9 @@ typedef struct Gpu {
   uint16_t display_line_start;
   uint16_t display_line_end;
   GpuCommandBuffer gp0_command_buffer;
-  uint8_t gp0_words_remaining;
+  uint32_t gp0_words_remaining;
   GP0Method gp0_method;
+  GP0Mode gp0_mode;
   size_t output_log_index;
 } Gpu;
 
