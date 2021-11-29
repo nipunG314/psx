@@ -209,6 +209,13 @@ void gp0_image_load(Gpu *gpu, uint32_t val) {
   gpu->gp0_mode = Gp0ImageLoadMode;
 }
 
+void gp0_image_store(Gpu *gpu, uint32_t val) {
+  uint32_t width = gpu->gp0_command_buffer.commands[2] & 0xFFFF;
+  uint32_t height = gpu->gp0_command_buffer.commands[2] >> 16;
+
+  log_error("Unhandled GP0_IMAGE_STORE. Width: %x, Height: %x", width, height);
+}
+
 void gpu_gp0(Gpu *gpu, uint32_t val) {
   if (gpu->gp0_words_remaining == 0) {
     uint8_t opcode = (val >> 24) & 0xFF;
@@ -232,6 +239,9 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
         gpu->gp0_method = gp0_image_load;
         gpu->gp0_words_remaining = 3;
         break;
+      case 0xC0:
+        gpu->gp0_method = gp0_image_store;
+        gpu->gp0_words_remaining = 3;
       case 0xE1:
         gpu->gp0_method = gp0_draw_mode;
         gpu->gp0_words_remaining = 1;
