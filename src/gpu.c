@@ -361,6 +361,10 @@ void gp1_display_vertical_range(Gpu *gpu, uint32_t val) {
   gpu->display_line_end = (val >> 10) & 0x3FF;
 }
 
+void gp1_display_enable(Gpu *gpu, uint32_t val) {
+  gpu->display_disabled = val & 1;
+}
+
 void gpu_gp1(Gpu *gpu, uint32_t val) {
   uint8_t opcode = (val >> 24) & 0xFF;
 
@@ -369,6 +373,9 @@ void gpu_gp1(Gpu *gpu, uint32_t val) {
   switch (opcode) {
     case 0x00:
       gp1_reset(gpu, val);
+      break;
+    case 0x03:
+      gp1_display_enable(gpu, val);
       break;
     case 0x04:
       gp1_dma_direction(gpu, val);
