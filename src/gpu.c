@@ -291,6 +291,13 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
   }
 }
 
+void gp1_reset_command_buffer(Gpu *gpu, uint32_t val) {
+  command_buffer_clear(&gpu->gp0_command_buffer);
+  gpu->gp0_words_remaining = 0;
+  gpu->gp0_mode = Gp0CommandMode;
+  // ToDo: Clear FIFO once implemented
+}
+
 void gp1_reset(Gpu *gpu, uint32_t val) {
   gpu->interrupt_active = false;
   gpu->page_base_x = gpu->page_base_y = 0;
@@ -319,8 +326,9 @@ void gp1_reset(Gpu *gpu, uint32_t val) {
   gpu->display_line_start = 0x10;
   gpu->display_line_end = 0x100;
   gpu->display_depth = GpuDisplayDepth15Bits;
+  gp1_reset_command_buffer(gpu, val);
 
-  // ToDo: Clear FIFO list and GPU Cache
+  // ToDo: GPU Cache
 }
 
 void gp1_dma_direction(Gpu *gpu, uint32_t val) {
@@ -375,6 +383,10 @@ void gp1_display_enable(Gpu *gpu, uint32_t val) {
   gpu->display_disabled = val & 1;
 }
 
+void gp1_acknowledge_irq(Gpu *gpu, uint32_t val) {
+  gpu->interrupt_active = false;
+}
+
 void gpu_gp1(Gpu *gpu, uint32_t val) {
   uint8_t opcode = (val >> 24) & 0xFF;
 
@@ -383,6 +395,12 @@ void gpu_gp1(Gpu *gpu, uint32_t val) {
   switch (opcode) {
     case 0x00:
       gp1_reset(gpu, val);
+      break;
+    case 0x01:
+      gp1_reset_command_buffer(gpu, val);
+      break;
+    case 0x02:
+      gp1_acknowledge_irq(gpu, val);
       break;
     case 0x03:
       gp1_display_enable(gpu, val);
