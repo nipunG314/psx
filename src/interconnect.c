@@ -405,12 +405,7 @@ void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
     uint32_t header = load_ram32(&inter->ram, addr);
     uint32_t transfer_size = header >> 24;
 
-    LOG_OUTPUT(inter->output_log_index, "DMA Linked List. Port: %x, Control: %08x, Dest: GPU, Addr: %08x, Size: %08x", port, get_dma_channel_control(channel), addr.data, transfer_size);
-
-    if (transfer_size == 0) {
-      print_output_log(inter->output_log_index);
-      break;
-    }
+    LOG_OUTPUT(inter->output_log_index, "DMA Linked List. Port: %x, Control: %08x, Dest: GPU, Addr: %08x, Size: %08x, Header: %08X", port, get_dma_channel_control(channel), addr.data, transfer_size, header);
 
     while (transfer_size > 0) {
       addr = MAKE_Addr((addr.data + 4) & 0x001FFFFC);
