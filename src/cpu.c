@@ -179,10 +179,10 @@ void op_sw(Cpu *cpu, Ins ins) {
     exception(cpu, StoreAddressError);
     return;
   }
-  store32(cpu, addr, cpu->regs[rt.data]);
-  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
-        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
+  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, NewValue: %08x",
+        addr.data, cpu->regs[rt.data]
   );
+  store32(cpu, addr, cpu->regs[rt.data]);
 }
 
 void op_sll(Cpu *cpu, Ins ins) {
@@ -516,11 +516,10 @@ void op_sh(Cpu *cpu, Ins ins) {
     return;
   }
 
-  store16(cpu, addr, cpu->regs[rt.data]);
-  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
-        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
+  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, NewValue: %08x",
+        addr.data, cpu->regs[rt.data]
   );
-
+  store16(cpu, addr, cpu->regs[rt.data]);
 }
 
 void op_sb(Cpu *cpu, Ins ins) {
@@ -535,11 +534,10 @@ void op_sb(Cpu *cpu, Ins ins) {
 
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
 
-  store8(cpu, addr, cpu->regs[rt.data]);
-  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
-        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
+  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, NewValue: %08x",
+        addr.data, cpu->regs[rt.data]
   );
-
+  store8(cpu, addr, cpu->regs[rt.data]);
 }
 
 void op_jr(Cpu *cpu, Ins ins) {
@@ -617,6 +615,9 @@ void op_srl(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
 
+  LOG_OUTPUT(cpu->output_log_index, " Shift: %08x, Source: %08x, OldValue: %08x, NewValue: %08x",
+        shift, cpu->regs[rt.data], cpu->regs[rd.data], cpu->regs[rt.data] >> shift
+  );
   set_reg(cpu, rd, cpu->regs[rt.data] >> shift);
 }
 
@@ -625,7 +626,12 @@ void op_srlv(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
 
-  set_reg(cpu, rd, cpu->regs[rt.data] >> (cpu->regs[rs.data] & 0x1F));
+  uint32_t shift = cpu->regs[rs.data] & 0x1F;
+
+  LOG_OUTPUT(cpu->output_log_index, " Shift: %08x, Source: %08x, OldValue: %08x, NewValue: %08x",
+        shift, cpu->regs[rt.data], cpu->regs[rd.data], cpu->regs[rt.data] >> shift
+  );
+  set_reg(cpu, rd, cpu->regs[rt.data] >> shift);
 }
 
 void op_lh(Cpu *cpu, Ins ins) {
