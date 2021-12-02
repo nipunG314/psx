@@ -194,6 +194,10 @@ void gp0_mask_bit_setting(Gpu *gpu, uint32_t val) {
   gpu->preserve_masked_pixels = val & 2;
 }
 
+void gp0_monochrome_quad(Gpu *gpu, uint32_t val) {
+  log_trace("STUB: Draw Monochrome Quad!");
+}
+
 void gp0_monochrome_rect(Gpu *gpu, uint32_t val) {
   log_trace("STUB: Draw Monochrome Rect!");
 }
@@ -230,6 +234,10 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
       case 0x01:
         gpu->gp0_method = gp0_clear_cache;
         gpu->gp0_words_remaining = 1;
+        break;
+      case 0x28:
+        gpu->gp0_method = gp0_monochrome_quad;
+        gpu->gp0_words_remaining = 4;
         break;
       case 0x60:
         gpu->gp0_method = gp0_monochrome_rect;
