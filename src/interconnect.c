@@ -341,8 +341,7 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
   START_LOGGING_PC();
 
   DmaChannel *channel = inter->dma.channels + port;
-  int8_t _increment = 4 - 8 * channel->step;
-  uint8_t increment = _increment;
+  int8_t increment = 4 - 8 * channel->step;
   Addr addr = channel->base_address;
   uint32_t transfer_size = get_dma_channel_transfer_size(channel);
 
