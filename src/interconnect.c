@@ -350,6 +350,7 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
     fatal("perform_dma_block called in LinkedList Mode!");
   
   LOG_OUTPUT(inter->output_log_index, "DMA BLOCK COPY. Port: %x, Control: %08x, Dest: RAM, Addr: %08x, Size: %08x", port, get_dma_channel_control(channel), addr.data, transfer_size);
+  print_output_log(inter->output_log_index);
 
   while (transfer_size > 0) {
     Addr cur_addr = MAKE_Addr(addr.data & 0x001FFFFC);
@@ -380,6 +381,8 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
               fatal("Unhandled DMA Port. port: 0x%08X", port);
           }
 
+          LOG_OUTPUT(inter->output_log_index, "DMA BLOCK COPY: Addr: %08x, Data: %08x", cur_addr.data, source_word);
+          print_output_log(inter->output_log_index);
           store_ram32(&inter->ram, cur_addr, source_word);
         }
     }
@@ -387,8 +390,6 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
     addr = MAKE_Addr(addr.data + increment);
     transfer_size--;
   }
-
-  print_output_log(inter->output_log_index);
 }
 
 void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
@@ -406,6 +407,7 @@ void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
     uint32_t transfer_size = header >> 24;
 
     LOG_OUTPUT(inter->output_log_index, "DMA Linked List. Port: %x, Control: %08x, Dest: GPU, Addr: %08x, Size: %08x, Header: %08X", port, get_dma_channel_control(channel), addr.data, transfer_size, header);
+    print_output_log(inter->output_log_index);
 
     while (transfer_size > 0) {
       addr = MAKE_Addr((addr.data + 4) & 0x001FFFFC);
@@ -416,8 +418,6 @@ void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
 
       transfer_size--;
     }
-
-    print_output_log(inter->output_log_index);
 
     if (header & 0x00800000)
       break;
