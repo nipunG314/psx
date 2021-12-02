@@ -198,6 +198,18 @@ void gp0_monochrome_quad(Gpu *gpu, uint32_t val) {
   log_trace("STUB: Draw Monochrome Quad!");
 }
 
+void gp0_texture_blend_quad(Gpu *gpu, uint32_t val) {
+  log_trace("STUB: Draw Texture Solid Blended Quad!");
+}
+
+void gp0_shaded_tri(Gpu *gpu, uint32_t val) {
+  log_trace("STUB: Draw Shaded Tri!");
+}
+
+void gp0_shaded_quad(Gpu *gpu, uint32_t val) {
+  log_trace("STUB: Draw Shaded Quad!");
+}
+
 void gp0_monochrome_rect(Gpu *gpu, uint32_t val) {
   log_trace("STUB: Draw Monochrome Rect!");
 }
@@ -238,6 +250,18 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
       case 0x28:
         gpu->gp0_method = gp0_monochrome_quad;
         gpu->gp0_words_remaining = 4;
+        break;
+      case 0x2C:
+        gpu->gp0_method = gp0_texture_blend_quad;
+        gpu->gp0_words_remaining = 9;
+        break;
+      case 0x30:
+        gpu->gp0_method = gp0_shaded_tri;
+        gpu->gp0_words_remaining = 6;
+        break;
+      case 0x38:
+        gpu->gp0_method = gp0_shaded_quad;
+        gpu->gp0_words_remaining = 8;
         break;
       case 0x60:
         gpu->gp0_method = gp0_monochrome_rect;
