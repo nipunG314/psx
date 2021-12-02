@@ -20,6 +20,8 @@ Bios init_bios(char const *filename) {
   if (fread(bios.data, sizeof(uint8_t), range(BIOS).size, fp) != sizeof(uint8_t) * count)
     fatal("IOError: Invalid BIOS Size: %s", filename);
 
+  fclose(fp);
+
   return bios;
 }
 
