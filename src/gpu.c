@@ -14,6 +14,18 @@ GpuCommandBuffer init_command_buffer() {
   return buffer;
 }
 
+GpuRenderer init_renderer() {
+  GpuRenderer renderer;
+
+  renderer.window = SDL_CreateWindow("PSX", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 512, 0);
+
+  return renderer;
+}
+
+void destroy_renderer(GpuRenderer *renderer) {
+  SDL_DestroyWindow(renderer->window);
+}
+
 void gp0_nop(Gpu *gpu, uint32_t val);
 
 Gpu init_gpu() {
@@ -59,6 +71,7 @@ Gpu init_gpu() {
   gpu.gp0_words_remaining = 0;
   gpu.gp0_method = gp0_nop;
   gpu.gp0_mode = Gp0CommandMode;
+  gpu.renderer = init_renderer();
   gpu.output_log_index = init_output_log();
 
   return gpu;
@@ -459,3 +472,6 @@ void gpu_gp1(Gpu *gpu, uint32_t val) {
   print_output_log(gpu->output_log_index);
 }
 
+void destroy_gpu(Gpu *gpu) {
+  destroy_renderer(&gpu->renderer);
+}

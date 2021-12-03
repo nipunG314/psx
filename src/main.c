@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <SDL2/SDL.h>
 
 #include "cpu.h"
 #include "flag.h"
@@ -25,6 +26,9 @@ void set_env(int argc, char **argv) {
 int main(int argc, char **argv) {
   set_env(argc, argv);
 
+  if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    fatal("SDLError: Couldn't init SDL. %s", SDL_GetError());
+
   Cpu cpu = init_cpu("SCPH1001.BIN");
 
   while (1) {
@@ -32,6 +36,8 @@ int main(int argc, char **argv) {
   }
 
   destroy_cpu(&cpu);
+
+  SDL_Quit();
 
   return 0;
 }

@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <SDL2/SDL.h>
 
 #include "dma.h"
 #include "instruction.h"
@@ -80,6 +81,13 @@ typedef enum GP0Mode {
   Gp0ImageLoadMode
 } GP0Mode;
 
+typedef struct GpuRenderer {
+  SDL_Window *window;
+} GpuRenderer;
+
+GpuRenderer init_renderer();
+void destroy_renderer(GpuRenderer *renderer);
+
 typedef struct Gpu Gpu;
 
 typedef void (*GP0Method)(Gpu *gpu, uint32_t val);
@@ -125,6 +133,7 @@ typedef struct Gpu {
   uint32_t gp0_words_remaining;
   GP0Method gp0_method;
   GP0Mode gp0_mode;
+  GpuRenderer renderer;
   size_t output_log_index;
 } Gpu;
 
@@ -133,5 +142,6 @@ uint32_t gpu_status(Gpu *gpu);
 uint32_t gpu_read(Gpu *gpu);
 void gpu_gp0(Gpu *gpu, uint32_t val);
 void gpu_gp1(Gpu *gpu, uint32_t val);
+void destroy_gpu(Gpu *gpu);
 
 #endif

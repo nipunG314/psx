@@ -443,4 +443,5 @@ void perform_dma(Interconnect *inter, DmaPort port) {
 void destroy_interconnect(Interconnect *inter) {
   destroy_bios(&inter->bios);
   destroy_ram(&inter->ram);
+  destroy_gpu(&inter->gpu);
 }
