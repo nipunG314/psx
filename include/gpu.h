@@ -81,47 +81,37 @@ typedef enum GP0Mode {
   Gp0ImageLoadMode
 } GP0Mode;
 
-typedef struct GpuPos {
-  int16_t x;
-  int16_t y;
-} GpuPos;
+typedef float Vec2[2];
+typedef float Vec3[3];
 
-static inline GpuPos pos_from_gp0(uint32_t val) {
-  GpuPos pos;
+static inline void pos_from_gp0(uint32_t val, Vec2 vec) {
+  int16_t x = val;
+  int16_t y = val >> 16;
 
-  pos.x = val;
-  pos.y = val >> 16;
-
-  return pos;
+  vec[0] = x;
+  vec[1] = y;
 }
 
-typedef struct GpuColor {
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-} GpuColor;
+static inline void color_from_gp0(uint32_t val, Vec3 vec) {
+  uint8_t r = val;
+  uint8_t g = val >> 8;
+  uint8_t b = val >> 16;
 
-static inline GpuColor color_from_gp0(uint32_t val) {
-  GpuColor color;
-
-  color.r = val;
-  color.g = val >> 8;
-  color.b = val >> 16;
-
-  return color;
+  vec[0] = r;
+  vec[1] = g;
+  vec[1] = b;
 }
 
 typedef struct GpuRenderer {
   SDL_Window *window;
   SDL_Surface *window_surface;
   SDL_Surface *vram_surface;
+  Vec2 pos[3];
+  Vec3 color[3];
 } GpuRenderer;
 
-typedef float Vec2[2];
-typedef float Vec3[3];
-
 GpuRenderer init_renderer();
-void draw(GpuRenderer *renderer);
+void renderer_update_window(GpuRenderer *renderer);
 void destroy_renderer(GpuRenderer *renderer);
 
 static inline float edge_func(Vec2 a, Vec2 b, Vec2 c) {
@@ -182,6 +172,7 @@ uint32_t gpu_status(Gpu *gpu);
 uint32_t gpu_read(Gpu *gpu);
 void gpu_gp0(Gpu *gpu, uint32_t val);
 void gpu_gp1(Gpu *gpu, uint32_t val);
+void gpu_draw(Gpu *gpu);
 void destroy_gpu(Gpu *gpu);
 
 #endif

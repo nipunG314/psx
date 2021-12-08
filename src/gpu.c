@@ -28,7 +28,7 @@ GpuRenderer init_renderer() {
   return renderer;
 }
 
-void draw(GpuRenderer *renderer) {
+void renderer_update_window(GpuRenderer *renderer) {
   SDL_BlitSurface(renderer->vram_surface, 0, renderer->window_surface, 0);
   SDL_UpdateWindowSurface(renderer->window);
 }
@@ -205,7 +205,7 @@ void gp0_set_drawing_offsets(Gpu *gpu, uint32_t val) {
   gpu->drawing_x_offset = gpu->drawing_x_offset >> 5;
   gpu->drawing_y_offset = gpu->drawing_y_offset >> 5;
 
-  draw(&gpu->renderer);
+  renderer_update_window(&gpu->renderer);
 }
 
 void gp0_texture_window(Gpu *gpu, uint32_t val) {
@@ -229,58 +229,18 @@ void gp0_texture_blend_quad(Gpu *gpu, uint32_t val) {
 }
 
 void gp0_shaded_tri(Gpu *gpu, uint32_t val) {
-  GpuPos pos_arr[3] = {
-    pos_from_gp0(gpu->gp0_command_buffer.commands[1]),
-    pos_from_gp0(gpu->gp0_command_buffer.commands[3]),
-    pos_from_gp0(gpu->gp0_command_buffer.commands[5])
-  };
-  Vec2 pos[3] = {
-    {pos_arr[0].x, pos_arr[0].y},
-    {pos_arr[1].x, pos_arr[1].y},
-    {pos_arr[2].x, pos_arr[2].y}
-  };
+  GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
+  GpuRenderer *renderer = &gpu->renderer;
 
-  GpuColor color_arr[3] = {
-    color_from_gp0(gpu->gp0_command_buffer.commands[0]),
-    color_from_gp0(gpu->gp0_command_buffer.commands[2]),
-    color_from_gp0(gpu->gp0_command_buffer.commands[4])
-  };
-  Vec3 color[3] = {
-    {color_arr[0].r, color_arr[0].g, color_arr[0].b},
-    {color_arr[1].r, color_arr[1].g, color_arr[1].b},
-    {color_arr[2].r, color_arr[2].g, color_arr[2].b},
-  };
+  pos_from_gp0(command_buffer->commands[1], renderer->pos[0]);
+  pos_from_gp0(command_buffer->commands[3], renderer->pos[1]);
+  pos_from_gp0(command_buffer->commands[5], renderer->pos[2]);
 
-  float area = edge_func(pos[0], pos[1], pos[2]);
+  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
+  color_from_gp0(command_buffer->commands[2], renderer->color[1]);
+  color_from_gp0(command_buffer->commands[4], renderer->color[2]);
 
-  for(uint16_t i = gpu->drawing_area_left; i <= gpu->drawing_area_right; i++) {
-    for(uint16_t j = gpu->drawing_area_top; j <= gpu->drawing_area_bottom; j++) {
-      i += gpu->drawing_x_offset;
-      j += gpu->drawing_y_offset;
-      Vec2 p = {i + 0.5f, j + 0.5f};
-      float w0 = edge_func(pos[1], pos[2], p);
-      float w1 = edge_func(pos[2], pos[0], p);
-      float w2 = edge_func(pos[0], pos[1], p);
-      if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
-        w0 /= area;
-        w1 /= area;
-        w2 /= area;
-
-        uint16_t r = w0 * color[0][0] + w1 * color[1][0] + w2 * color[2][0];
-        uint16_t g = w0 * color[0][1] + w1 * color[1][1] + w2 * color[2][1];
-        uint16_t b = w0 * color[0][2] + w1 * color[1][2] + w2 * color[2][2];
-        r = (r & 0xF8) >> 3;
-        g = (g & 0xF8) >> 3;
-        b = (b & 0xF8) >> 3;
-        uint16_t pixel = (r << 10) | (g << 5) | b;
-
-        SDL_Surface *surface = gpu->renderer.vram_surface;
-        uint16_t *target = surface->pixels;
-        target += j * surface->pitch + i * surface->format->BytesPerPixel;
-        *target = pixel;
-      }
-    }
-  }
+  gpu_draw(gpu);
 }
 
 void gp0_shaded_quad(Gpu *gpu, uint32_t val) {
@@ -534,6 +494,41 @@ void gpu_gp1(Gpu *gpu, uint32_t val) {
   }
 
   print_output_log(gpu->output_log_index);
+}
+
+void gpu_draw(Gpu *gpu) {
+  GpuRenderer *renderer = &gpu->renderer;
+
+  float area = edge_func(renderer->pos[0], renderer->pos[1], renderer->pos[2]);
+
+  for(uint16_t i = gpu->drawing_area_left; i <= gpu->drawing_area_right; i++) {
+    for(uint16_t j = gpu->drawing_area_top; j <= gpu->drawing_area_bottom; j++) {
+      i += gpu->drawing_x_offset;
+      j += gpu->drawing_y_offset;
+      Vec2 p = {i + 0.5f, j + 0.5f};
+      float w0 = edge_func(renderer->pos[1], renderer->pos[2], p);
+      float w1 = edge_func(renderer->pos[2], renderer->pos[0], p);
+      float w2 = edge_func(renderer->pos[0], renderer->pos[1], p);
+      if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+        w0 /= area;
+        w1 /= area;
+        w2 /= area;
+
+        uint16_t r = w0 * renderer->color[0][0] + w1 * renderer->color[1][0] + w2 * renderer->color[2][0];
+        uint16_t g = w0 * renderer->color[0][1] + w1 * renderer->color[1][1] + w2 * renderer->color[2][1];
+        uint16_t b = w0 * renderer->color[0][2] + w1 * renderer->color[1][2] + w2 * renderer->color[2][2];
+        r = (r & 0xF8) >> 3;
+        g = (g & 0xF8) >> 3;
+        b = (b & 0xF8) >> 3;
+        uint16_t pixel = (r << 10) | (g << 5) | b;
+
+        SDL_Surface *surface = gpu->renderer.vram_surface;
+        uint16_t *target = surface->pixels;
+        target += j * surface->pitch + i * surface->format->BytesPerPixel;
+        *target = pixel;
+      }
+    }
+  }
 }
 
 void destroy_gpu(Gpu *gpu) {
