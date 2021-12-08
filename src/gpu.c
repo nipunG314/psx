@@ -548,7 +548,7 @@ void gpu_draw(Gpu *gpu) {
 
         SDL_Surface *surface = gpu->renderer.vram_surface;
         uint16_t *target = surface->pixels;
-        target += j * surface->pitch + i * surface->format->BytesPerPixel;
+        target += (j * surface->pitch + i * surface->format->BytesPerPixel) / 2;
         *target = pixel;
       }
     }
