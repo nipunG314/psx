@@ -265,7 +265,28 @@ void gp0_shaded_tri(Gpu *gpu, uint32_t val) {
 }
 
 void gp0_shaded_quad(Gpu *gpu, uint32_t val) {
-  log_trace("STUB: Draw Shaded Quad!");
+  GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
+  GpuRenderer *renderer = &gpu->renderer;
+
+  pos_from_gp0(command_buffer->commands[1], renderer->pos[0]);
+  pos_from_gp0(command_buffer->commands[3], renderer->pos[1]);
+  pos_from_gp0(command_buffer->commands[5], renderer->pos[2]);
+
+  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
+  color_from_gp0(command_buffer->commands[2], renderer->color[1]);
+  color_from_gp0(command_buffer->commands[4], renderer->color[2]);
+
+  gpu_draw(gpu);
+
+  pos_from_gp0(command_buffer->commands[3], renderer->pos[0]);
+  pos_from_gp0(command_buffer->commands[5], renderer->pos[1]);
+  pos_from_gp0(command_buffer->commands[7], renderer->pos[2]);
+
+  color_from_gp0(command_buffer->commands[2], renderer->color[0]);
+  color_from_gp0(command_buffer->commands[4], renderer->color[1]);
+  color_from_gp0(command_buffer->commands[6], renderer->color[2]);
+
+  gpu_draw(gpu);
 }
 
 void gp0_monochrome_rect(Gpu *gpu, uint32_t val) {
