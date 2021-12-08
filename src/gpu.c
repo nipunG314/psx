@@ -526,6 +526,12 @@ void gpu_draw(Gpu *gpu) {
   }
 
   float area = edge_func(renderer->pos[0], renderer->pos[1], renderer->pos[2]);
+  if (area < 0) {
+    Vec2 tmp_pos = {renderer->pos[1][0], renderer->pos[1][1]};
+    memcpy(renderer->pos[1], renderer->pos[2], sizeof renderer->pos[1]);
+    memcpy(renderer->pos[2], tmp_pos, sizeof renderer->pos[2]);
+    area *= -1;
+  }
 
   for(uint16_t i = gpu->drawing_area_left; i <= gpu->drawing_area_right; i++) {
     for(uint16_t j = gpu->drawing_area_top; j <= gpu->drawing_area_bottom; j++) {
