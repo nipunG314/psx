@@ -221,7 +221,28 @@ void gp0_mask_bit_setting(Gpu *gpu, uint32_t val) {
 }
 
 void gp0_monochrome_quad(Gpu *gpu, uint32_t val) {
-  log_trace("STUB: Draw Monochrome Quad!");
+  GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
+  GpuRenderer *renderer = &gpu->renderer;
+
+  pos_from_gp0(command_buffer->commands[1], renderer->pos[0]);
+  pos_from_gp0(command_buffer->commands[2], renderer->pos[1]);
+  pos_from_gp0(command_buffer->commands[3], renderer->pos[2]);
+
+  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
+  color_from_gp0(command_buffer->commands[0], renderer->color[1]);
+  color_from_gp0(command_buffer->commands[0], renderer->color[2]);
+
+  gpu_draw(gpu);
+
+  pos_from_gp0(command_buffer->commands[2], renderer->pos[0]);
+  pos_from_gp0(command_buffer->commands[3], renderer->pos[1]);
+  pos_from_gp0(command_buffer->commands[4], renderer->pos[2]);
+
+  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
+  color_from_gp0(command_buffer->commands[0], renderer->color[1]);
+  color_from_gp0(command_buffer->commands[0], renderer->color[2]);
+
+  gpu_draw(gpu);
 }
 
 void gp0_texture_blend_quad(Gpu *gpu, uint32_t val) {
@@ -286,7 +307,7 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
         break;
       case 0x28:
         gpu->gp0_method = gp0_monochrome_quad;
-        gpu->gp0_words_remaining = 4;
+        gpu->gp0_words_remaining = 5;
         break;
       case 0x2C:
         gpu->gp0_method = gp0_texture_blend_quad;

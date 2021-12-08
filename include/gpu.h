@@ -99,7 +99,7 @@ static inline void color_from_gp0(uint32_t val, Vec3 vec) {
 
   vec[0] = r;
   vec[1] = g;
-  vec[1] = b;
+  vec[2] = b;
 }
 
 typedef struct GpuRenderer {
