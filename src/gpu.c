@@ -520,12 +520,15 @@ void gpu_gp1(Gpu *gpu, uint32_t val) {
 void gpu_draw(Gpu *gpu) {
   GpuRenderer *renderer = &gpu->renderer;
 
+  for (int i=0; i<3; i++) {
+    renderer->pos[i][0] += gpu->drawing_x_offset;
+    renderer->pos[i][1] += gpu->drawing_y_offset;
+  }
+
   float area = edge_func(renderer->pos[0], renderer->pos[1], renderer->pos[2]);
 
   for(uint16_t i = gpu->drawing_area_left; i <= gpu->drawing_area_right; i++) {
     for(uint16_t j = gpu->drawing_area_top; j <= gpu->drawing_area_bottom; j++) {
-      i += gpu->drawing_x_offset;
-      j += gpu->drawing_y_offset;
       Vec2 p = {i + 0.5f, j + 0.5f};
       float w0 = edge_func(renderer->pos[1], renderer->pos[2], p);
       float w1 = edge_func(renderer->pos[2], renderer->pos[0], p);
