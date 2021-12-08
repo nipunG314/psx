@@ -81,12 +81,52 @@ typedef enum GP0Mode {
   Gp0ImageLoadMode
 } GP0Mode;
 
+typedef struct GpuPos {
+  int16_t x;
+  int16_t y;
+} GpuPos;
+
+static inline GpuPos pos_from_gp0(uint32_t val) {
+  GpuPos pos;
+
+  pos.x = val;
+  pos.y = val >> 16;
+
+  return pos;
+}
+
+typedef struct GpuColor {
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+} GpuColor;
+
+static inline GpuColor color_from_gp0(uint32_t val) {
+  GpuColor color;
+
+  color.r = val;
+  color.g = val >> 8;
+  color.b = val >> 16;
+
+  return color;
+}
+
 typedef struct GpuRenderer {
   SDL_Window *window;
+  SDL_Surface *window_surface;
+  SDL_Surface *vram_surface;
 } GpuRenderer;
 
+typedef float Vec2[2];
+typedef float Vec3[3];
+
 GpuRenderer init_renderer();
+void draw(GpuRenderer *renderer);
 void destroy_renderer(GpuRenderer *renderer);
+
+static inline float edge_func(Vec2 a, Vec2 b, Vec2 c) {
+  return (c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0]);
+}
 
 typedef struct Gpu Gpu;
 
