@@ -102,6 +102,20 @@ static inline void color_from_gp0(uint32_t val, Vec3 vec) {
   vec[2] = b;
 }
 
+typedef struct Gpu Gpu;
+
+static inline uint16_t rgb_888_to_555(Gpu *gpu, Vec3 color) {
+  uint16_t r = color[0];
+  uint16_t g = color[1];
+  uint16_t b = color[2];
+
+  r = (r & 0xF8) >> 3;
+  g = (g & 0xF8) >> 3;
+  b = (b & 0xF8) >> 3;
+
+  return (r << 10) | (g << 5) | b;
+}
+
 typedef struct GpuRenderer {
   SDL_Window *window;
   SDL_Surface *window_surface;
@@ -117,8 +131,6 @@ void destroy_renderer(GpuRenderer *renderer);
 static inline float edge_func(Vec2 a, Vec2 b, Vec2 c) {
   return (c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0]);
 }
-
-typedef struct Gpu Gpu;
 
 typedef void (*GP0Method)(Gpu *gpu, uint32_t val);
 

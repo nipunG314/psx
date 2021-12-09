@@ -565,18 +565,16 @@ void gpu_draw(Gpu *gpu) {
         w1 /= area;
         w2 /= area;
 
-        uint16_t r = w0 * renderer->color[0][0] + w1 * renderer->color[1][0] + w2 * renderer->color[2][0];
-        uint16_t g = w0 * renderer->color[0][1] + w1 * renderer->color[1][1] + w2 * renderer->color[2][1];
-        uint16_t b = w0 * renderer->color[0][2] + w1 * renderer->color[1][2] + w2 * renderer->color[2][2];
-        r = (r & 0xF8) >> 3;
-        g = (g & 0xF8) >> 3;
-        b = (b & 0xF8) >> 3;
-        uint16_t pixel = (r << 10) | (g << 5) | b;
+        Vec3 shaded_color = {
+           w0 * renderer->color[0][0] + w1 * renderer->color[1][0] + w2 * renderer->color[2][0],
+           w0 * renderer->color[0][1] + w1 * renderer->color[1][1] + w2 * renderer->color[2][1],
+           w0 * renderer->color[0][2] + w1 * renderer->color[1][2] + w2 * renderer->color[2][2]
+        };
 
         SDL_Surface *surface = gpu->renderer.vram_surface;
         uint16_t *target = surface->pixels;
         target += (j * surface->pitch + i * surface->format->BytesPerPixel) / 2;
-        *target = pixel;
+        *target = rgb_888_to_555(gpu, shaded_color);
       }
     }
   }
