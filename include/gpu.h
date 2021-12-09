@@ -128,6 +128,37 @@ GpuRenderer init_renderer();
 void renderer_update_window(GpuRenderer *renderer);
 void destroy_renderer(GpuRenderer *renderer);
 
+typedef struct GpuImageLoadBuffer {
+  uint16_t left;
+  uint16_t top;
+  uint16_t width;
+  uint16_t height;
+  uint16_t x;
+  uint16_t y;
+} GpuImageLoadBuffer;
+
+static inline void push_image_word(GpuImageLoadBuffer *buffer, GpuRenderer *renderer, uint32_t image_word) {
+  SDL_Surface *surface = renderer->vram_surface;
+  uint16_t *_target = surface->pixels;
+  uint16_t *target = _target + (buffer->y * surface->pitch + buffer->x * surface->format->BytesPerPixel) / 2;
+  *target = image_word;
+
+  buffer->x++;
+  if (buffer->x == buffer->left + buffer->width) {
+    buffer->x = buffer->left;
+    buffer->y++;
+  }
+
+  target = _target + (buffer->y * surface->pitch + buffer->x * surface->format->BytesPerPixel) / 2;
+  *target = image_word >> 16;
+
+  buffer->x++;
+  if (buffer->x == buffer->left + buffer->width) {
+    buffer->x = buffer->left;
+    buffer->y++;
+  }
+}
+
 static inline float edge_func(Vec2 a, Vec2 b, Vec2 c) {
   return (c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0]);
 }
@@ -175,6 +206,7 @@ typedef struct Gpu {
   uint32_t gp0_words_remaining;
   GP0Method gp0_method;
   GP0Mode gp0_mode;
+  GpuImageLoadBuffer image_load_buffer;
   GpuRenderer renderer;
   size_t output_log_index;
 } Gpu;

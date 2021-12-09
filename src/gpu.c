@@ -82,6 +82,12 @@ Gpu init_gpu() {
   gpu.gp0_words_remaining = 0;
   gpu.gp0_method = gp0_nop;
   gpu.gp0_mode = Gp0CommandMode;
+  gpu.image_load_buffer.left = 0;
+  gpu.image_load_buffer.top = 0;
+  gpu.image_load_buffer.width = 0;
+  gpu.image_load_buffer.height = 0;
+  gpu.image_load_buffer.x = 0;
+  gpu.image_load_buffer.y = 0;
   gpu.renderer = init_renderer();
   gpu.output_log_index = init_output_log();
 
@@ -300,7 +306,18 @@ void gp0_image_load(Gpu *gpu, uint32_t val) {
   uint32_t size = width * height;
   size = (size + 1) & ~1;
 
-  gpu->gp0_words_remaining = size / 2;
+  if (size > 0) {
+    gpu->image_load_buffer.left = gpu->gp0_command_buffer.commands[1];
+    gpu->image_load_buffer.top = gpu->gp0_command_buffer.commands[1] >> 16;
+    gpu->image_load_buffer.width = width;
+    gpu->image_load_buffer.height = height;
+    gpu->gp0_words_remaining = size / 2;
+    gpu->image_load_buffer.x = gpu->image_load_buffer.left;
+    gpu->image_load_buffer.y = gpu->image_load_buffer.top;
+  } else {
+    log_error("GPU: 0-Sized Image Load");
+  }
+
   gpu->gp0_mode = Gp0ImageLoadMode;
 }
 
@@ -395,9 +412,10 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
         gpu->gp0_method(gpu, val);
       break;
     case Gp0ImageLoadMode:
-      // ToDo: Load image data into VRAM
-      if (gpu->gp0_words_remaining == 0)
+      push_image_word(&gpu->image_load_buffer, &gpu->renderer, val);
+      if (gpu->gp0_words_remaining == 0) {
         gpu->gp0_mode = Gp0CommandMode;
+      }
       break;
   }
 }
