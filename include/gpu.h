@@ -8,12 +8,18 @@
 #ifndef GPU_H
 #define GPU_H
 
-typedef enum GpuTransparencyBlend {
+typedef enum GpuTransparencyMode {
   GpuTransparencyMean,
   GpuTransparencySum,
   GpuTransparencyDiff,
   GpuTransparencySumQuarter
-} GpuTransparencyBlend;
+} GpuTransparencyMode;
+
+typedef enum GpuTextureBlend {
+  GpuNoTexture,
+  GpuRawTexture,
+  GpuBlendedTexture
+} GpuTextureBlend;
 
 typedef enum GpuTextureDepth {
   GpuTexture4Bits,
@@ -166,10 +172,12 @@ static inline float edge_func(Vec2 a, Vec2 b, Vec2 c) {
 typedef void (*GP0Method)(Gpu *gpu, uint32_t val);
 
 typedef struct Gpu {
-  uint8_t page_base_x;
-  uint8_t page_base_y;
-  GpuTransparencyBlend semi_transparency_blend;
+  uint16_t texture_page[2];
+  uint16_t clut[2];
+  bool semi_transparent;
+  GpuTransparencyMode semi_transparency_mode;
   GpuTextureDepth texture_depth;
+  GpuTextureBlend blend_mode;
   bool dithering;
   bool draw_to_display;
   bool force_set_mask_bit;
@@ -210,6 +218,18 @@ typedef struct Gpu {
   GpuRenderer renderer;
   size_t output_log_index;
 } Gpu;
+
+static inline void set_clut(Gpu *gpu, uint32_t val) {
+  gpu->clut[0] = (val & 0x3F) << 4;
+  gpu->clut[1] = (val >> 6) & 0x1FF;
+}
+
+static inline void set_texture_params(Gpu *gpu, uint32_t val) {
+  gpu->texture_page[0] = (val & 0xF) << 6;
+  gpu->texture_page[1] = ((val >> 4) & 1) << 8;
+  gpu->semi_transparency_mode = (val >> 5) & 3;
+  gpu->texture_depth = (val >> 7) & 3;
+}
 
 Gpu init_gpu();
 uint32_t gpu_status(Gpu *gpu);

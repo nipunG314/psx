@@ -42,10 +42,12 @@ void gp0_nop(Gpu *gpu, uint32_t val);
 Gpu init_gpu() {
   Gpu gpu;
 
-  gpu.page_base_x = 0;
-  gpu.page_base_y = 0;
-  gpu.semi_transparency_blend = GpuTransparencyMean;
+  gpu.texture_page[0] = gpu.texture_page[1] = 0;
+  gpu.clut[0] = gpu.clut[1] = 0;
+  gpu.semi_transparent = false;
+  gpu.semi_transparency_mode = GpuTransparencyMean;
   gpu.texture_depth = GpuTexture4Bits;
+  gpu.blend_mode = GpuNoTexture;
   gpu.dithering = false;
   gpu.draw_to_display = false;
   gpu.force_set_mask_bit = false;
@@ -97,9 +99,9 @@ Gpu init_gpu() {
 uint32_t gpu_status(Gpu *gpu) {
   uint32_t status = 0;
 
-  status |= gpu->page_base_x << 0;
-  status |= gpu->page_base_y << 4;
-  status |= ((uint32_t)gpu->semi_transparency_blend) << 5;
+  status |= gpu->texture_page[0] << 0;
+  status |= gpu->texture_page[1] << 4;
+  status |= ((uint32_t)gpu->semi_transparency_mode) << 5;
   status |= ((uint32_t)gpu->texture_depth) << 7;
   status |= ((uint32_t)gpu->dithering) << 9;
   status |= ((uint32_t)gpu->draw_to_display) << 10;
@@ -156,20 +158,20 @@ void gp0_clear_cache(Gpu *gpu, uint32_t val) {
 }
 
 void gp0_draw_mode(Gpu *gpu, uint32_t val) {
-  gpu->page_base_x = (val & 0xF);
-  gpu->page_base_y = ((val >> 4) & 1);
+  gpu->texture_page[0] = (val & 0xF);
+  gpu->texture_page[1] = ((val >> 4) & 1);
   switch ((val >> 5) & 3) {
     case 0:
-      gpu->semi_transparency_blend = GpuTransparencyMean;
+      gpu->semi_transparency_mode = GpuTransparencyMean;
       break;
     case 1:
-      gpu->semi_transparency_blend = GpuTransparencySum;
+      gpu->semi_transparency_mode = GpuTransparencySum;
       break;
     case 2:
-      gpu->semi_transparency_blend = GpuTransparencyDiff;
+      gpu->semi_transparency_mode = GpuTransparencyDiff;
       break;
     case 3:
-      gpu->semi_transparency_blend = GpuTransparencySumQuarter;
+      gpu->semi_transparency_mode = GpuTransparencySumQuarter;
       break;
   }
   switch ((val >> 7) & 3) {
@@ -400,6 +402,14 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
 
     command_buffer_clear(&gpu->gp0_command_buffer);
 
+    bool textured = opcode & 0x4;
+    if (textured) {
+      gpu->blend_mode = (opcode & 0x1) ? GpuRawTexture : GpuBlendedTexture;
+    } else
+      gpu->blend_mode = GpuNoTexture;
+
+    gpu->semi_transparent = opcode & 0x2;
+
     print_output_log(gpu->output_log_index);
   }
 
@@ -429,8 +439,8 @@ void gp1_reset_command_buffer(Gpu *gpu, uint32_t val) {
 
 void gp1_reset(Gpu *gpu, uint32_t val) {
   gpu->interrupt_active = false;
-  gpu->page_base_x = gpu->page_base_y = 0;
-  gpu->semi_transparency_blend = GpuTransparencyMean;
+  gpu->texture_page[0] = gpu->texture_page[1] = 0;
+  gpu->semi_transparency_mode = GpuTransparencyMean;
   gpu->texture_depth = GpuTexture4Bits;
   gpu->texture_window_x_mask = gpu->texture_window_y_mask = 0;
   gpu->texture_window_x_offset = gpu->texture_window_y_offset = 0;
