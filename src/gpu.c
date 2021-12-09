@@ -99,8 +99,8 @@ Gpu init_gpu() {
 uint32_t gpu_status(Gpu *gpu) {
   uint32_t status = 0;
 
-  status |= gpu->texture_page[0] << 0;
-  status |= gpu->texture_page[1] << 4;
+  status |= gpu->texture_page[0] >> 6;
+  status |= (gpu->texture_page[1] >> 8) << 4;
   status |= ((uint32_t)gpu->semi_transparency_mode) << 5;
   status |= ((uint32_t)gpu->texture_depth) << 7;
   status |= ((uint32_t)gpu->dithering) << 9;
@@ -158,8 +158,8 @@ void gp0_clear_cache(Gpu *gpu, uint32_t val) {
 }
 
 void gp0_draw_mode(Gpu *gpu, uint32_t val) {
-  gpu->texture_page[0] = (val & 0xF);
-  gpu->texture_page[1] = ((val >> 4) & 1);
+  gpu->texture_page[0] = (val & 0xF) << 6;
+  gpu->texture_page[1] = ((val >> 4) & 1) << 8;
   switch ((val >> 5) & 3) {
     case 0:
       gpu->semi_transparency_mode = GpuTransparencyMean;
@@ -253,8 +253,32 @@ void gp0_monochrome_quad(Gpu *gpu, uint32_t val) {
   gpu_draw(gpu);
 }
 
-void gp0_texture_blend_quad(Gpu *gpu, uint32_t val) {
-  log_trace("STUB: Draw Texture Solid Blended Quad!");
+void gp0_texture_quad(Gpu *gpu, uint32_t val) {
+  GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
+  GpuRenderer *renderer = &gpu->renderer;
+
+  set_clut(gpu, command_buffer->commands[2]);
+  set_texture_params(gpu, command_buffer->commands[4]);
+
+  pos_from_gp0(command_buffer->commands[1], renderer->pos[0]);
+  pos_from_gp0(command_buffer->commands[3], renderer->pos[1]);
+  pos_from_gp0(command_buffer->commands[5], renderer->pos[2]);
+
+  tex_from_gp0(command_buffer->commands[2], renderer->tex[0]);
+  tex_from_gp0(command_buffer->commands[4], renderer->tex[1]);
+  tex_from_gp0(command_buffer->commands[6], renderer->tex[2]);
+
+  gpu_draw(gpu);
+
+  pos_from_gp0(command_buffer->commands[3], renderer->pos[0]);
+  pos_from_gp0(command_buffer->commands[5], renderer->pos[1]);
+  pos_from_gp0(command_buffer->commands[7], renderer->pos[2]);
+
+  tex_from_gp0(command_buffer->commands[4], renderer->tex[0]);
+  tex_from_gp0(command_buffer->commands[6], renderer->tex[1]);
+  tex_from_gp0(command_buffer->commands[8], renderer->tex[2]);
+
+  gpu_draw(gpu);
 }
 
 void gp0_shaded_tri(Gpu *gpu, uint32_t val) {
@@ -350,7 +374,7 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
         gpu->gp0_words_remaining = 5;
         break;
       case 0x2C:
-        gpu->gp0_method = gp0_texture_blend_quad;
+        gpu->gp0_method = gp0_texture_quad;
         gpu->gp0_words_remaining = 9;
         break;
       case 0x30:
@@ -594,15 +618,36 @@ void gpu_draw(Gpu *gpu) {
         w2 /= area;
 
         Vec3 shaded_color = {
-           w0 * renderer->color[0][0] + w1 * renderer->color[1][0] + w2 * renderer->color[2][0],
-           w0 * renderer->color[0][1] + w1 * renderer->color[1][1] + w2 * renderer->color[2][1],
-           w0 * renderer->color[0][2] + w1 * renderer->color[1][2] + w2 * renderer->color[2][2]
+          w0 * renderer->color[0][0] + w1 * renderer->color[1][0] + w2 * renderer->color[2][0],
+          w0 * renderer->color[0][1] + w1 * renderer->color[1][1] + w2 * renderer->color[2][1],
+          w0 * renderer->color[0][2] + w1 * renderer->color[1][2] + w2 * renderer->color[2][2]
         };
 
-        SDL_Surface *surface = gpu->renderer.vram_surface;
-        uint16_t *target = surface->pixels;
-        target += (j * surface->pitch + i * surface->format->BytesPerPixel) / 2;
-        *target = rgb_888_to_555(gpu, shaded_color);
+        uint16_t *target = get_vram(renderer, i, j);
+        switch (gpu->blend_mode) {
+          case GpuNoTexture:
+            *target = float_to_555(shaded_color);
+            break;
+          case GpuBlendedTexture: {
+            Vec2 interop_tex = {
+              w0 * renderer->tex[0][0] + w1 * renderer->tex[1][0] + w2 * renderer->tex[2][0],
+              w0 * renderer->tex[0][1] + w1 * renderer->tex[1][1] + w2 * renderer->tex[2][1],
+            };
+            switch (gpu->texture_depth) {
+              case GpuTexture4Bits:
+                *target = multiply_888_555(float_to_888(shaded_color), get_texel_4bit(gpu, interop_tex[0], interop_tex[1]));
+                break;
+              case GpuTexture8Bits:
+                *target = multiply_888_555(float_to_888(shaded_color), get_texel_8bit(gpu, interop_tex[0], interop_tex[1]));
+                break;
+              case GpuTexture15Bits:
+                *target = multiply_888_555(float_to_888(shaded_color), get_texel_15bit(gpu, interop_tex[0], interop_tex[1]));
+                break;
+            }
+          } break;
+          case GpuRawTexture:
+            fatal("STUB: GpuRawTexture is unimplemented!");
+        }
       }
     }
   }

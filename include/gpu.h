@@ -108,9 +108,17 @@ static inline void color_from_gp0(uint32_t val, Vec3 vec) {
   vec[2] = b;
 }
 
+static inline void tex_from_gp0(uint32_t val, Vec2 vec) {
+  int16_t x = val;
+  int16_t y = val >> 16;
+
+  vec[0] = x;
+  vec[1] = y;
+}
+
 typedef struct Gpu Gpu;
 
-static inline uint16_t rgb_888_to_555(Gpu *gpu, Vec3 color) {
+static inline uint16_t float_to_555(Vec3 color) {
   uint16_t r = color[0];
   uint16_t g = color[1];
   uint16_t b = color[2];
@@ -122,16 +130,49 @@ static inline uint16_t rgb_888_to_555(Gpu *gpu, Vec3 color) {
   return (r << 10) | (g << 5) | b;
 }
 
+static inline uint32_t float_to_888(Vec3 color) {
+  uint32_t r = color[0];
+  uint32_t g = color[1];
+  uint32_t b = color[2];
+
+  r = (r & 0xFF);
+  g = (g & 0xFF);
+  b = (b & 0xFF);
+
+  return (r << 16) | (g << 8) | b;
+}
+
+static inline uint16_t min(uint16_t a, uint16_t b) {
+  return (a > b) ? b : a;
+}
+
+static inline uint16_t multiply_888_555(uint32_t color888, uint16_t color555) {
+  uint16_t b = min(31, ((color888 & 0xFF) * (color555 & 0x1F)) >> 7);
+  uint16_t g = min(31, (((color888 >> 8) & 0xFF) * ((color555 >> 5) & 0x1F)) >> 7);
+  uint16_t r = min(31, (((color888 >> 16) & 0xFF) * ((color555 >> 10) & 0x1F)) >> 7);
+
+  return (r << 10) | (g << 5) | b;
+}
+
 typedef struct GpuRenderer {
   SDL_Window *window;
   SDL_Surface *window_surface;
   SDL_Surface *vram_surface;
   Vec2 pos[3];
   Vec3 color[3];
+  Vec2 tex[3];
 } GpuRenderer;
 
 GpuRenderer init_renderer();
 void renderer_update_window(GpuRenderer *renderer);
+
+static inline uint16_t *get_vram(GpuRenderer *renderer, uint16_t x, uint16_t y) {
+  SDL_Surface *surface = renderer->vram_surface;
+  uint16_t *target = surface->pixels;
+  target += (y * surface->pitch + x * surface->format->BytesPerPixel) / 2;
+  return target;
+}
+
 void destroy_renderer(GpuRenderer *renderer);
 
 typedef struct GpuImageLoadBuffer {
@@ -144,9 +185,7 @@ typedef struct GpuImageLoadBuffer {
 } GpuImageLoadBuffer;
 
 static inline void push_image_word(GpuImageLoadBuffer *buffer, GpuRenderer *renderer, uint32_t image_word) {
-  SDL_Surface *surface = renderer->vram_surface;
-  uint16_t *_target = surface->pixels;
-  uint16_t *target = _target + (buffer->y * surface->pitch + buffer->x * surface->format->BytesPerPixel) / 2;
+  uint16_t *target = get_vram(renderer, buffer->x, buffer->y);
   *target = image_word;
 
   buffer->x++;
@@ -155,7 +194,7 @@ static inline void push_image_word(GpuImageLoadBuffer *buffer, GpuRenderer *rend
     buffer->y++;
   }
 
-  target = _target + (buffer->y * surface->pitch + buffer->x * surface->format->BytesPerPixel) / 2;
+  target = get_vram(renderer, buffer->x, buffer->y);
   *target = image_word >> 16;
 
   buffer->x++;
@@ -229,6 +268,26 @@ static inline void set_texture_params(Gpu *gpu, uint32_t val) {
   gpu->texture_page[1] = ((val >> 4) & 1) << 8;
   gpu->semi_transparency_mode = (val >> 5) & 3;
   gpu->texture_depth = (val >> 7) & 3;
+  if (gpu->texture_depth == 3) {
+    log_error("Invalid Texture Depth detected!");
+    gpu->texture_depth = GpuTexture15Bits;
+  }
+}
+
+static inline uint16_t get_texel_4bit(Gpu *gpu, uint16_t x, uint16_t y) {
+  uint16_t texel = *get_vram(&gpu->renderer, gpu->texture_page[0] + x/4, gpu->texture_page[1] + y);
+  uint16_t index = (texel >> (x % 4) * 4) & 0xF;
+  return *get_vram(&gpu->renderer, gpu->clut[0] + index, gpu->clut[1]);
+}
+
+static inline uint16_t get_texel_8bit(Gpu *gpu, uint16_t x, uint16_t y) {
+  uint16_t texel = *get_vram(&gpu->renderer, gpu->texture_page[0] + x/2, gpu->texture_page[1] + y);
+  uint16_t index = (texel >> (x % 2) * 8) & 0xFF;
+  return *get_vram(&gpu->renderer, gpu->clut[0] + index, gpu->clut[1]);
+}
+
+static inline uint16_t get_texel_15bit(Gpu *gpu, uint16_t x, uint16_t y) {
+  return *get_vram(&gpu->renderer, gpu->texture_page[0] + x, gpu->texture_page[1] + y);
 }
 
 Gpu init_gpu();
