@@ -257,12 +257,16 @@ void gp0_texture_quad(Gpu *gpu, uint32_t val) {
   GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
   GpuRenderer *renderer = &gpu->renderer;
 
-  set_clut(gpu, command_buffer->commands[2]);
-  set_texture_params(gpu, command_buffer->commands[4]);
+  set_clut(gpu, command_buffer->commands[2] >> 16);
+  set_texture_params(gpu, command_buffer->commands[4] >> 16);
 
   pos_from_gp0(command_buffer->commands[1], renderer->pos[0]);
   pos_from_gp0(command_buffer->commands[3], renderer->pos[1]);
   pos_from_gp0(command_buffer->commands[5], renderer->pos[2]);
+
+  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
+  color_from_gp0(command_buffer->commands[0], renderer->color[1]);
+  color_from_gp0(command_buffer->commands[0], renderer->color[2]);
 
   tex_from_gp0(command_buffer->commands[2], renderer->tex[0]);
   tex_from_gp0(command_buffer->commands[4], renderer->tex[1]);

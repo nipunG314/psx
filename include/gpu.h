@@ -258,12 +258,12 @@ typedef struct Gpu {
   size_t output_log_index;
 } Gpu;
 
-static inline void set_clut(Gpu *gpu, uint32_t val) {
+static inline void set_clut(Gpu *gpu, uint16_t val) {
   gpu->clut[0] = (val & 0x3F) << 4;
   gpu->clut[1] = (val >> 6) & 0x1FF;
 }
 
-static inline void set_texture_params(Gpu *gpu, uint32_t val) {
+static inline void set_texture_params(Gpu *gpu, uint16_t val) {
   gpu->texture_page[0] = (val & 0xF) << 6;
   gpu->texture_page[1] = ((val >> 4) & 1) << 8;
   gpu->semi_transparency_mode = (val >> 5) & 3;
