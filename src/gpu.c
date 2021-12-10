@@ -636,6 +636,7 @@ void gpu_draw(Gpu *gpu) {
         };
 
         uint16_t *target = get_vram(renderer, i, j);
+        uint16_t new_color;
         switch (gpu->blend_mode) {
           case GpuNoTexture:
             *target = float_to_555(shaded_color);
@@ -643,28 +644,32 @@ void gpu_draw(Gpu *gpu) {
           case GpuBlendedTexture:
             switch (gpu->texture_depth) {
               case GpuTexture4Bits:
-                *target = multiply_888_555(float_to_888(shaded_color), get_texel_4bit(gpu, interop_tex[0], interop_tex[1]));
+                new_color = multiply_888_555(float_to_888(shaded_color), get_texel_4bit(gpu, interop_tex[0], interop_tex[1]));
                 break;
               case GpuTexture8Bits:
-                *target = multiply_888_555(float_to_888(shaded_color), get_texel_8bit(gpu, interop_tex[0], interop_tex[1]));
+                new_color = multiply_888_555(float_to_888(shaded_color), get_texel_8bit(gpu, interop_tex[0], interop_tex[1]));
                 break;
               case GpuTexture15Bits:
-                *target = multiply_888_555(float_to_888(shaded_color), get_texel_15bit(gpu, interop_tex[0], interop_tex[1]));
+                new_color = multiply_888_555(float_to_888(shaded_color), get_texel_15bit(gpu, interop_tex[0], interop_tex[1]));
                 break;
             }
+            if (new_color)
+              *target = new_color;
             break;
           case GpuRawTexture:
             switch (gpu->texture_depth) {
               case GpuTexture4Bits:
-                *target = get_texel_4bit(gpu, interop_tex[0], interop_tex[1]);
+                new_color = get_texel_4bit(gpu, interop_tex[0], interop_tex[1]);
                 break;
               case GpuTexture8Bits:
-                *target = get_texel_8bit(gpu, interop_tex[0], interop_tex[1]);
+                new_color = get_texel_8bit(gpu, interop_tex[0], interop_tex[1]);
                 break;
               case GpuTexture15Bits:
-                *target = get_texel_15bit(gpu, interop_tex[0], interop_tex[1]);
+                new_color = get_texel_15bit(gpu, interop_tex[0], interop_tex[1]);
                 break;
             }
+            if (new_color)
+              *target = new_color;
             break;
         }
       }
