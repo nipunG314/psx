@@ -604,9 +604,13 @@ void gpu_draw(Gpu *gpu) {
 
   float area = edge_func(renderer->pos[0], renderer->pos[1], renderer->pos[2]);
   if (area < 0) {
-    Vec2 tmp_pos = {renderer->pos[1][0], renderer->pos[1][1]};
+    Vec2 tmp = {renderer->pos[1][0], renderer->pos[1][1]};
     memcpy(renderer->pos[1], renderer->pos[2], sizeof renderer->pos[1]);
-    memcpy(renderer->pos[2], tmp_pos, sizeof renderer->pos[2]);
+    memcpy(renderer->pos[2], tmp, sizeof renderer->pos[2]);
+    tmp[0] = renderer->tex[1][0];
+    tmp[1] = renderer->tex[1][1];
+    memcpy(renderer->tex[1], renderer->tex[2], sizeof renderer->tex[1]);
+    memcpy(renderer->tex[2], tmp, sizeof renderer->tex[2]);
     area *= -1;
   }
 
