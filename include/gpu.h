@@ -109,8 +109,8 @@ static inline void color_from_gp0(uint32_t val, Vec3 vec) {
 }
 
 static inline void tex_from_gp0(uint32_t val, Vec2 vec) {
-  int16_t x = val;
-  int16_t y = val >> 16;
+  uint8_t x = val;
+  uint8_t y = val >> 8;
 
   vec[0] = x;
   vec[1] = y;
