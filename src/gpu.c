@@ -630,17 +630,17 @@ void gpu_draw(Gpu *gpu) {
           w0 * renderer->color[0][1] + w1 * renderer->color[1][1] + w2 * renderer->color[2][1],
           w0 * renderer->color[0][2] + w1 * renderer->color[1][2] + w2 * renderer->color[2][2]
         };
+        Vec2 interop_tex = {
+          w0 * renderer->tex[0][0] + w1 * renderer->tex[1][0] + w2 * renderer->tex[2][0],
+          w0 * renderer->tex[0][1] + w1 * renderer->tex[1][1] + w2 * renderer->tex[2][1],
+        };
 
         uint16_t *target = get_vram(renderer, i, j);
         switch (gpu->blend_mode) {
           case GpuNoTexture:
             *target = float_to_555(shaded_color);
             break;
-          case GpuBlendedTexture: {
-            Vec2 interop_tex = {
-              w0 * renderer->tex[0][0] + w1 * renderer->tex[1][0] + w2 * renderer->tex[2][0],
-              w0 * renderer->tex[0][1] + w1 * renderer->tex[1][1] + w2 * renderer->tex[2][1],
-            };
+          case GpuBlendedTexture:
             switch (gpu->texture_depth) {
               case GpuTexture4Bits:
                 *target = multiply_888_555(float_to_888(shaded_color), get_texel_4bit(gpu, interop_tex[0], interop_tex[1]));
@@ -652,9 +652,20 @@ void gpu_draw(Gpu *gpu) {
                 *target = multiply_888_555(float_to_888(shaded_color), get_texel_15bit(gpu, interop_tex[0], interop_tex[1]));
                 break;
             }
-          } break;
+            break;
           case GpuRawTexture:
-            fatal("STUB: GpuRawTexture is unimplemented!");
+            switch (gpu->texture_depth) {
+              case GpuTexture4Bits:
+                *target = get_texel_4bit(gpu, interop_tex[0], interop_tex[1]);
+                break;
+              case GpuTexture8Bits:
+                *target = get_texel_8bit(gpu, interop_tex[0], interop_tex[1]);
+                break;
+              case GpuTexture15Bits:
+                *target = get_texel_15bit(gpu, interop_tex[0], interop_tex[1]);
+                break;
+            }
+            break;
         }
       }
     }
