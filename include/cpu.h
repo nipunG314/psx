@@ -13,7 +13,6 @@ typedef struct Cpu {
   Addr next_pc;
   Addr current_pc;
   uint32_t regs[32];
-  uint32_t output_regs[32];
   Addr bad_v_adr;
   uint32_t sr;
   uint32_t cause;
@@ -38,6 +37,18 @@ void set_reg(Cpu *cpu, RegIndex index, uint32_t value);
 void decode_and_execute(Cpu *cpu, Ins ins);
 void run_next_ins(Cpu *cpu);
 void exception(Cpu *cpu, Exception exp);
+
+static inline void delayed_load(Cpu *cpu) {
+  set_reg(cpu, cpu->load_delay_slot.index, cpu->load_delay_slot.val);
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(MAKE_RegIndex(0x0), 0x0);
+}
+
+static inline void delayed_load_chain(Cpu *cpu, RegIndex index, uint32_t val) {
+  if (cpu->load_delay_slot.index.data != index.data)
+    set_reg(cpu, cpu->load_delay_slot.index, cpu->load_delay_slot.val);
+  cpu->load_delay_slot = MAKE_LoadDelaySlot(index, val);
+}
+
 void destroy_cpu(Cpu *cpu);
 
 #endif

@@ -62,7 +62,6 @@ Cpu init_cpu(char const *bios_filename) {
   cpu.current_pc = MAKE_Addr(0x0);
   for(int index = 0; index < 32; index++) {
     cpu.regs[index] = 0xDEADDEAD;
-    cpu.output_regs[index] = 0xDEADDEAD;
   }
   cpu.regs[0] = 0x0;
   cpu.bad_v_adr = MAKE_Addr(0x0);
@@ -104,8 +103,8 @@ void store8(Cpu *cpu, Addr addr, uint8_t val) {
 }
 
 void set_reg(Cpu *cpu, RegIndex index, uint32_t value) {
-  cpu->output_regs[index.data] = value;
-  cpu->output_regs[0] = 0x0;
+  cpu->regs[index.data] = value;
+  cpu->regs[0] = 0x0;
 }
 
 void run_next_ins(Cpu *cpu) {
@@ -145,6 +144,10 @@ void run_next_ins(Cpu *cpu) {
     return;
   }
 
+  // Increment PC
+  cpu->pc = cpu->next_pc;
+  cpu->next_pc = MAKE_Addr(cpu->next_pc.data + 4);
+
   // Check if in delay_slot
   cpu->delay_slot = cpu->branch;
   cpu->branch = false;
@@ -152,19 +155,8 @@ void run_next_ins(Cpu *cpu) {
   if (get_flag(PRINT_INS))
     log_ins(ins);
 
-  // Increment PC
-  cpu->pc = cpu->next_pc;
-  cpu->next_pc = MAKE_Addr(cpu->next_pc.data + 4);
-
-  // Update out_regs as per load_delay_slot
-  set_reg(cpu, cpu->load_delay_slot.index, cpu->load_delay_slot.val);
-  cpu->load_delay_slot = MAKE_LoadDelaySlot(MAKE_RegIndex(0x0), 0x0);
-
   // Execute current instruction
   decode_and_execute(cpu, ins);
-
-  // Copy output_regs into regs
-  memcpy(cpu->regs, cpu->output_regs, sizeof cpu->regs);
 
   print_output_log(cpu->output_log_index);
 }
@@ -204,6 +196,8 @@ void op_lui(Cpu *cpu, Ins ins) {
   uint32_t imm = get_imm(ins);
   RegIndex rt = get_rt(ins);
 
+  delayed_load(cpu);
+
   set_reg(cpu, rt, imm << 16);
 }
 
@@ -211,24 +205,33 @@ void op_ori(Cpu *cpu, Ins ins) {
   uint32_t imm = get_imm(ins);
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
 
-  set_reg(cpu, rt, imm | cpu->regs[rs.data]);
+  delayed_load(cpu);
+
+  set_reg(cpu, rt, imm | reg_s);
 }
 
 void op_xori(Cpu *cpu, Ins ins) {
   uint32_t imm = get_imm(ins);
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
 
-  set_reg(cpu, rt, imm ^ cpu->regs[rs.data]);
+  delayed_load(cpu);
+
+  set_reg(cpu, rt, imm ^ reg_s);
 }
 
 void op_andi(Cpu *cpu, Ins ins) {
   uint32_t imm = get_imm(ins);
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
 
-  set_reg(cpu, rt, imm & cpu->regs[rs.data]);
+  delayed_load(cpu);
+
+  set_reg(cpu, rt, imm & reg_s);
 }
 
 void op_sw(Cpu *cpu, Ins ins) {
@@ -241,39 +244,50 @@ void op_sw(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   Addr addr = MAKE_Addr(imm_se + cpu->regs[rs.data]);
+  uint32_t reg_t = cpu->regs[rt.data];
+
+  delayed_load(cpu);
 
   if (addr.data % 4) {
     exception(cpu, StoreAddressError);
     return;
   }
-  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, NewValue: %08x",
-        addr.data, cpu->regs[rt.data]
-  );
-  store32(cpu, addr, cpu->regs[rt.data]);
+
+  store32(cpu, addr, reg_t);
 }
 
 void op_sll(Cpu *cpu, Ins ins) {
   uint32_t shift = get_shift(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
+  uint32_t reg_t = cpu->regs[rt.data];
 
-  set_reg(cpu, rd, cpu->regs[rt.data] << shift);
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, reg_t << shift);
 }
 
 void op_sllv(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
+  uint32_t reg_t = cpu->regs[rt.data];
 
-  set_reg(cpu, rd, cpu->regs[rt.data] << (cpu->regs[rs.data] & 0x1F));
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, reg_t << (reg_s & 0x1F));
 }
 
 void op_addiu(Cpu *cpu, Ins ins) {
   uint32_t imm_se = get_imm_se(ins);
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
 
-  set_reg(cpu, rt, cpu->regs[rs.data] + imm_se);
+  delayed_load(cpu);
+
+  set_reg(cpu, rt, reg_s + imm_se);
 }
 
 void op_addi(Cpu *cpu, Ins ins) {
@@ -282,6 +296,8 @@ void op_addi(Cpu *cpu, Ins ins) {
   uint32_t imm_se = get_imm_se(ins);
   uint32_t res = imm_se + cpu->regs[rs.data];
   bool overflow = ((cpu->regs[rs.data] ^ res) & (imm_se ^ res)) >> 31;
+
+  delayed_load(cpu);
 
   if (overflow) {
     exception(cpu, Overflow);
@@ -296,20 +312,26 @@ void op_j(Cpu *cpu, Ins ins) {
   cpu->branch = true;
 
   cpu->next_pc = MAKE_Addr((cpu->next_pc.data & 0xF0000000) | (imm_jump << 2));
+
+  delayed_load(cpu);
 }
 
 void op_jal(Cpu *cpu, Ins ins) {
-  set_reg(cpu, MAKE_RegIndex(0x1F), cpu->next_pc.data);
-
+  uint32_t ra = cpu->next_pc.data;
   op_j(cpu, ins);
+  set_reg(cpu, MAKE_RegIndex(0x1F), ra);
 }
 
 void op_jalr(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rd = get_rd(ins);
 
-  set_reg(cpu, rd, cpu->next_pc.data);
+  uint32_t ra = cpu->next_pc.data;
   cpu->next_pc = MAKE_Addr(cpu->regs[rs.data]);
+
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, ra);
   cpu->branch = true;
 }
 
@@ -317,38 +339,56 @@ void op_or(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
+  uint32_t reg_t = cpu->regs[rt.data];
 
-  set_reg(cpu, rd, cpu->regs[rs.data] | cpu->regs[rt.data]);
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, reg_s | reg_t);
 }
 
 void op_and(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
+  uint32_t reg_t = cpu->regs[rt.data];
 
-  set_reg(cpu, rd, cpu->regs[rs.data] & cpu->regs[rt.data]);
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, reg_s & reg_t);
 }
 
 void op_nor(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
+  uint32_t reg_t = cpu->regs[rt.data];
 
-  set_reg(cpu, rd, ~(cpu->regs[rs.data] | cpu->regs[rt.data]));
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, ~(reg_s | reg_t));
 }
 
 void op_xor(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
+  uint32_t reg_t = cpu->regs[rt.data];
 
-  set_reg(cpu, rd, cpu->regs[rs.data] ^ cpu->regs[rt.data]);
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, reg_s ^ reg_t);
 }
 
 void op_mtc0(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
   uint8_t cop_reg = get_cop_reg(ins);
   uint32_t val = cpu->regs[rt.data];
+
+  delayed_load(cpu);
 
   switch (cop_reg) {
     case 3:
@@ -379,23 +419,23 @@ void op_mfc0(Cpu *cpu, Ins ins) {
   switch (cop_reg) {
     case 6:
     case 7:
-      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, 0x0);
+      delayed_load_chain(cpu, rt, 0x0);
       break;
     case 8:
-      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, cpu->bad_v_adr.data);
+      delayed_load_chain(cpu, rt, cpu->bad_v_adr.data);
       break;
     case 12:
-      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, cpu->sr);
+      delayed_load_chain(cpu, rt, cpu->sr);
       break;
     case 13:
-      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, cpu->cause);
+      delayed_load_chain(cpu, rt, cpu->cause);
       break;
     case 14:
-      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, cpu->epc.data);
+      delayed_load_chain(cpu, rt, cpu->epc.data);
       break;
     case 15:
       // Default PRID Value
-      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, 0x2);
+      delayed_load_chain(cpu, rt, 0x2);
       break;
     default:
       fatal("Unhandled read from cop0 register. RegIndex: %d", cop_reg);
@@ -411,6 +451,8 @@ void op_swc2(Cpu *cpu, Ins ins) {
 }
 
 void op_rfe(Cpu *cpu, Ins ins) {
+  delayed_load(cpu);
+
   if ((ins.data & 0x3F) != 0x10)
     fatal("Invalid cop0 instruction: 0x%08X", ins);
 
@@ -426,6 +468,8 @@ void op_beq(Cpu *cpu, Ins ins) {
 
   if (cpu->regs[rs.data] == cpu->regs[rt.data])
     branch(cpu, imm_se);
+
+  delayed_load(cpu);
 }
 
 void op_bne(Cpu *cpu, Ins ins) {
@@ -435,6 +479,8 @@ void op_bne(Cpu *cpu, Ins ins) {
 
   if (cpu->regs[rs.data] != cpu->regs[rt.data])
     branch(cpu, imm_se);
+
+  delayed_load(cpu);
 }
 
 void op_blez(Cpu *cpu, Ins ins) {
@@ -445,6 +491,8 @@ void op_blez(Cpu *cpu, Ins ins) {
 
   if (reg_s <= 0)
     branch(cpu, imm_se);
+
+  delayed_load(cpu);
 }
 
 void op_bgtz(Cpu *cpu, Ins ins) {
@@ -455,6 +503,8 @@ void op_bgtz(Cpu *cpu, Ins ins) {
 
   if (reg_s > 0)
     branch(cpu, imm_se);
+
+  delayed_load(cpu);
 }
 
 void op_lw(Cpu *cpu, Ins ins) {
@@ -470,15 +520,12 @@ void op_lw(Cpu *cpu, Ins ins) {
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
 
   if (addr.data % 4) {
+    delayed_load(cpu);
     exception(cpu, LoadAddressError);
+    return;
   }
 
-  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load32(cpu, addr));
-
-  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
-        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
-  );
-
+  delayed_load_chain(cpu, rt, load32(cpu, addr));
 }
 
 void op_lb(Cpu *cpu, Ins ins) {
@@ -493,12 +540,7 @@ void op_lb(Cpu *cpu, Ins ins) {
 
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
   int8_t data = load8(cpu, addr);
-
-  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, data);
-  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
-        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
-  );
-
+  delayed_load_chain(cpu, rt, data);
 }
 
 void op_lbu(Cpu *cpu, Ins ins) {
@@ -512,19 +554,20 @@ void op_lbu(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
 
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
-  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load8(cpu, MAKE_Addr(cpu->regs[rs.data] + imm_se)));
-  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
-        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
-  );
-
+  uint8_t data = load8(cpu, addr);
+  delayed_load_chain(cpu, rt, data);
 }
 
 void op_sltu(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
+  uint32_t reg_t = cpu->regs[rt.data];
 
-  set_reg(cpu, rd, cpu->regs[rs.data] < cpu->regs[rt.data]);
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, reg_s < reg_t);
 }
 
 void op_slt(Cpu *cpu, Ins ins) {
@@ -533,6 +576,8 @@ void op_slt(Cpu *cpu, Ins ins) {
   RegIndex rd = get_rd(ins);
   int32_t reg_s = cpu->regs[rs.data];
   int32_t reg_t = cpu->regs[rt.data];
+
+  delayed_load(cpu);
 
   set_reg(cpu, rd, reg_s < reg_t);
 }
@@ -543,6 +588,8 @@ void op_slti(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
   int32_t reg_s = cpu->regs[rs.data];
 
+  delayed_load(cpu);
+
   set_reg(cpu, rt, reg_s < imm_se);
 }
 
@@ -550,8 +597,11 @@ void op_sltiu(Cpu *cpu, Ins ins) {
   uint32_t imm_se = get_imm_se(ins);
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
 
-  set_reg(cpu, rt, cpu->regs[rs.data] < imm_se);
+  delayed_load(cpu);
+
+  set_reg(cpu, rt, reg_s < imm_se);
 }
 
 void op_add(Cpu *cpu, Ins ins) {
@@ -560,6 +610,8 @@ void op_add(Cpu *cpu, Ins ins) {
   RegIndex rd = get_rd(ins);
   uint32_t res = cpu->regs[rs.data] + cpu->regs[rt.data];
   bool overflow = ((cpu->regs[rs.data] ^ res) & (cpu->regs[rt.data] ^ res)) >> 31;
+
+  delayed_load(cpu);
 
   if (overflow) {
     exception(cpu, Overflow);
@@ -573,8 +625,12 @@ void op_addu(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
+  uint32_t reg_t = cpu->regs[rt.data];
 
-  set_reg(cpu, rd, cpu->regs[rs.data] + cpu->regs[rt.data]);
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, reg_s + reg_t);
 }
 
 void op_sh(Cpu *cpu, Ins ins) {
@@ -587,6 +643,9 @@ void op_sh(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
   uint32_t imm_se = get_imm_se(ins);
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
+  uint32_t reg_t = cpu->regs[rt.data];
+
+  delayed_load(cpu);
 
   if (addr.data % 2) {
     exception(cpu, StoreAddressError);
@@ -594,9 +653,9 @@ void op_sh(Cpu *cpu, Ins ins) {
   }
 
   LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, NewValue: %08x",
-        addr.data, cpu->regs[rt.data]
+        addr.data, reg_t
   );
-  store16(cpu, addr, cpu->regs[rt.data]);
+  store16(cpu, addr, reg_t);
 }
 
 void op_sb(Cpu *cpu, Ins ins) {
@@ -610,15 +669,19 @@ void op_sb(Cpu *cpu, Ins ins) {
   uint32_t imm_se = get_imm_se(ins);
 
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
+  uint32_t reg_t = cpu->regs[rt.data];
+
+  delayed_load(cpu);
 
   LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, NewValue: %08x",
-        addr.data, cpu->regs[rt.data]
+        addr.data, reg_t
   );
-  store8(cpu, addr, cpu->regs[rt.data]);
+  store8(cpu, addr, reg_t);
 }
 
 void op_jr(Cpu *cpu, Ins ins) {
   cpu->next_pc = MAKE_Addr(cpu->regs[get_rs(ins).data]);
+  delayed_load(cpu);
   cpu->branch = true;
 }
 
@@ -632,6 +695,8 @@ void op_bxx(Cpu *cpu, Ins ins) {
   int32_t reg_s = cpu->regs[rs.data];
   uint32_t test = (reg_s < 0);
   test = test ^ is_bgez;
+
+  delayed_load(cpu);
 
   if (is_link)
     set_reg(cpu, MAKE_RegIndex(0x1F), cpu->next_pc.data);
@@ -648,6 +713,8 @@ void op_sub(Cpu *cpu, Ins ins) {
   uint32_t res = cpu->regs[rs.data] - cpu->regs[rt.data];
   bool overflow = ((cpu->regs[rs.data] ^ res) & ~(cpu->regs[rt.data] ^ res)) >> 31;
 
+  delayed_load(cpu);
+
   if (overflow) {
     exception(cpu, Overflow);
     return;
@@ -660,8 +727,12 @@ void op_subu(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
+  uint32_t reg_s = cpu->regs[rs.data];
+  uint32_t reg_t = cpu->regs[rt.data];
 
-  set_reg(cpu, rd, cpu->regs[rs.data] - cpu->regs[rt.data]);
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, reg_s - reg_t);
 }
 
 void op_sra(Cpu *cpu, Ins ins) {
@@ -671,6 +742,8 @@ void op_sra(Cpu *cpu, Ins ins) {
 
   int32_t reg_t = cpu->regs[rt.data];
   reg_t = reg_t >> shift;
+
+  delayed_load(cpu);
 
   set_reg(cpu, rd, reg_t);
 }
@@ -684,6 +757,8 @@ void op_srav(Cpu *cpu, Ins ins) {
   uint8_t shift = cpu->regs[rs.data] & 0x1F;
   reg_t = reg_t >> shift;
 
+  delayed_load(cpu);
+
   set_reg(cpu, rd, reg_t);
 }
 
@@ -691,11 +766,11 @@ void op_srl(Cpu *cpu, Ins ins) {
   uint32_t shift = get_shift(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
+  uint32_t reg_t = cpu->regs[rt.data];
 
-  LOG_OUTPUT(cpu->output_log_index, " Shift: %08x, Source: %08x, OldValue: %08x, NewValue: %08x",
-        shift, cpu->regs[rt.data], cpu->regs[rd.data], cpu->regs[rt.data] >> shift
-  );
-  set_reg(cpu, rd, cpu->regs[rt.data] >> shift);
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, reg_t >> shift);
 }
 
 void op_srlv(Cpu *cpu, Ins ins) {
@@ -704,11 +779,11 @@ void op_srlv(Cpu *cpu, Ins ins) {
   RegIndex rd = get_rd(ins);
 
   uint32_t shift = cpu->regs[rs.data] & 0x1F;
+  uint32_t reg_t = cpu->regs[rt.data];
 
-  LOG_OUTPUT(cpu->output_log_index, " Shift: %08x, Source: %08x, OldValue: %08x, NewValue: %08x",
-        shift, cpu->regs[rt.data], cpu->regs[rd.data], cpu->regs[rt.data] >> shift
-  );
-  set_reg(cpu, rd, cpu->regs[rt.data] >> shift);
+  delayed_load(cpu);
+
+  set_reg(cpu, rd, reg_t >> shift);
 }
 
 void op_lh(Cpu *cpu, Ins ins) {
@@ -723,17 +798,14 @@ void op_lh(Cpu *cpu, Ins ins) {
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
 
   if (addr.data % 2) {
+    delayed_load(cpu);
     exception(cpu, LoadAddressError);
     return;
   }
 
   int16_t val = load16(cpu, addr); 
 
-  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, val); 
-  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
-        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
-  );
-
+  delayed_load_chain(cpu, rt, val);
 }
 
 void op_lhu(Cpu *cpu, Ins ins) {
@@ -749,15 +821,12 @@ void op_lhu(Cpu *cpu, Ins ins) {
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
 
   if (addr.data % 2) {
+    delayed_load(cpu);
     exception(cpu, LoadAddressError);
     return;
   }
 
-  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, load16(cpu, addr));
-  LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, OldValue: %08x, NewValue: %08x",
-        addr.data, cpu->regs[rt.data], cpu->load_delay_slot.val
-  );
-
+  delayed_load_chain(cpu, rt, load16(cpu, addr));
 }
 
 void op_lwl(Cpu *cpu, Ins ins) {
@@ -766,7 +835,11 @@ void op_lwl(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
 
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
-  uint32_t cur_val = cpu->output_regs[rt.data];
+  uint32_t cur_val;
+  if (cpu->load_delay_slot.index.data == rt.data)
+    cur_val = cpu->load_delay_slot.val;
+  else
+    cur_val = cpu->regs[rt.data];
 
   Addr aligned_addr = MAKE_Addr(addr.data & ~3);
   Ins aligned_ins = MAKE_Ins(load32(cpu, aligned_addr));
@@ -789,7 +862,7 @@ void op_lwl(Cpu *cpu, Ins ins) {
       fatal("Unreachable Statement!");
   }
 
-  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, val);
+  delayed_load_chain(cpu, rt, val);
 }
 
 void op_lwr(Cpu *cpu, Ins ins) {
@@ -798,7 +871,11 @@ void op_lwr(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
 
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
-  uint32_t cur_val = cpu->output_regs[rt.data];
+  uint32_t cur_val;
+  if (cpu->load_delay_slot.index.data == rt.data)
+    cur_val = cpu->load_delay_slot.val;
+  else
+    cur_val = cpu->regs[rt.data];
 
   Addr aligned_addr = MAKE_Addr(addr.data & ~3);
   Ins aligned_ins = MAKE_Ins(load32(cpu, aligned_addr));
@@ -821,7 +898,7 @@ void op_lwr(Cpu *cpu, Ins ins) {
       fatal("Unreachable Statement!");
   }
 
-  cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, val);
+  delayed_load_chain(cpu, rt, val);
 }
 
 void op_swl(Cpu *cpu, Ins ins) {
@@ -852,6 +929,8 @@ void op_swl(Cpu *cpu, Ins ins) {
     default:
       fatal("Unreachable Statement!");
   }
+
+  delayed_load(cpu);
 
   store32(cpu, aligned_addr, final_val);
 }
@@ -885,6 +964,8 @@ void op_swr(Cpu *cpu, Ins ins) {
       fatal("Unreachable Statement!");
   }
 
+  delayed_load(cpu);
+
   store32(cpu, aligned_addr, final_val);
 }
 void op_mult(Cpu *cpu, Ins ins) {
@@ -894,6 +975,8 @@ void op_mult(Cpu *cpu, Ins ins) {
   int32_t reg_t = cpu->regs[rt.data];
   int64_t reg_s_64 = reg_s;
   int64_t reg_t_64 = reg_t;
+
+  delayed_load(cpu);
 
   uint64_t prod = reg_s_64 * reg_t_64;
   cpu->hi = prod >> 32;
@@ -906,6 +989,8 @@ void op_multu(Cpu *cpu, Ins ins) {
   uint64_t reg_s = cpu->regs[rs.data];
   uint64_t reg_t = cpu->regs[rt.data];
 
+  delayed_load(cpu);
+
   uint64_t prod = reg_s * reg_t;
   cpu->hi = prod >> 32;
   cpu->lo = prod;
@@ -916,6 +1001,8 @@ void op_div(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
   int32_t reg_s = cpu->regs[rs.data];
   int32_t reg_t = cpu->regs[rt.data];
+
+  delayed_load(cpu);
 
   if (reg_t == 0) {
     cpu->hi = reg_s;
@@ -935,6 +1022,8 @@ void op_divu(Cpu *cpu, Ins ins) {
   uint32_t reg_s = cpu->regs[rs.data];
   uint32_t reg_t = cpu->regs[rt.data];
 
+  delayed_load(cpu);
+
   if (reg_t == 0) {
     cpu->hi = reg_s;
     cpu->lo = 0xFFFFFFFF;
@@ -947,6 +1036,8 @@ void op_divu(Cpu *cpu, Ins ins) {
 void op_mflo(Cpu *cpu, Ins ins) {
   RegIndex rd = get_rd(ins);
 
+  delayed_load(cpu);
+
   set_reg(cpu, rd, cpu->lo);
 }
 
@@ -954,10 +1045,14 @@ void op_mtlo(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
 
   cpu->lo = cpu->regs[rs.data];
+
+  delayed_load(cpu);
 }
 
 void op_mfhi(Cpu *cpu, Ins ins) {
   RegIndex rd = get_rd(ins);
+
+  delayed_load(cpu);
 
   set_reg(cpu, rd, cpu->hi);
 }
@@ -966,13 +1061,19 @@ void op_mthi(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
 
   cpu->hi = cpu->regs[rs.data];
+
+  delayed_load(cpu);
 }
 
 void op_syscall(Cpu *cpu, Ins ins) {
+  delayed_load(cpu);
+
   exception(cpu, SysCall);
 }
 
 void op_break(Cpu *cpu, Ins ins) {
+  delayed_load(cpu);
+
   exception(cpu, Break);
 }
 
