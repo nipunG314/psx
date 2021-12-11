@@ -279,15 +279,16 @@ void op_addiu(Cpu *cpu, Ins ins) {
 void op_addi(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
-  int32_t imm_se = get_imm_se(ins);
-  int32_t reg_s = cpu->regs[rs.data];
+  uint32_t imm_se = get_imm_se(ins);
+  uint32_t res = imm_se + cpu->regs[rs.data];
+  bool overflow = ((cpu->regs[rs.data] ^ res) & (imm_se ^ res)) >> 31;
 
-  if (reg_s >= 0 && imm_se > INT32_MAX - reg_s) {
+  if (overflow) {
     exception(cpu, Overflow);
     return;
   }
 
-  set_reg(cpu, rt, imm_se + reg_s);
+  set_reg(cpu, rt, res);
 }
 
 void op_j(Cpu *cpu, Ins ins) {
@@ -557,15 +558,15 @@ void op_add(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
-  int32_t reg_s = cpu->regs[rs.data];
-  int32_t reg_t = cpu->regs[rt.data];
+  uint32_t res = cpu->regs[rs.data] + cpu->regs[rt.data];
+  bool overflow = ((cpu->regs[rs.data] ^ res) & (cpu->regs[rt.data] ^ res)) >> 31;
 
-  if ((reg_t >= 0 && reg_s > INT32_MAX - reg_t) || (reg_s >= 0 && reg_t > INT32_MAX - reg_s)) {
+  if (overflow) {
     exception(cpu, Overflow);
     return;
   }
 
-  set_reg(cpu, rd, reg_s + reg_t);
+  set_reg(cpu, rd, res);
 }
 
 void op_addu(Cpu *cpu, Ins ins) {
@@ -644,15 +645,15 @@ void op_sub(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
   RegIndex rt = get_rt(ins);
   RegIndex rd = get_rd(ins);
-  int32_t reg_s = cpu->regs[rs.data];
-  int32_t reg_t = cpu->regs[rt.data];
+  uint32_t res = cpu->regs[rs.data] - cpu->regs[rt.data];
+  bool overflow = ((cpu->regs[rs.data] ^ res) & ~(cpu->regs[rt.data] ^ res)) >> 31;
 
-  if (reg_t < 0 && reg_s > INT32_MAX + reg_t) {
+  if (overflow) {
     exception(cpu, Overflow);
     return;
   }
 
-  set_reg(cpu, rd, reg_s - reg_t);
+  set_reg(cpu, rd, res);
 }
 
 void op_subu(Cpu *cpu, Ins ins) {
