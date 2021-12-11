@@ -65,6 +65,7 @@ Cpu init_cpu(char const *bios_filename) {
     cpu.output_regs[index] = 0xDEADDEAD;
   }
   cpu.regs[0] = 0x0;
+  cpu.bad_v_adr = MAKE_Addr(0x0);
   cpu.sr = 0x0;
   cpu.cause = 0x0;
   cpu.epc = MAKE_Addr(0x0);
@@ -177,6 +178,10 @@ void exception(Cpu *cpu, Exception exp) {
 
   cpu->cause = exp << 2;
   cpu->epc = cpu->current_pc;
+  if (exp == LoadAddressError || exp == StoreAddressError)
+    cpu->bad_v_adr = cpu->current_pc;
+  else
+    cpu->epc = cpu->current_pc;
 
   if (cpu->delay_slot) {
     cpu->epc = MAKE_Addr(cpu->epc.data - 4);
@@ -359,9 +364,7 @@ void op_mtc0(Cpu *cpu, Ins ins) {
       cpu->sr = val;
       break;
     case 13:
-      if (val != 0) {
-        fatal("Unhandled write to CAUSE register. Val: %d", val);
-      }
+      cpu->cause = val;
       break;
     default:
       fatal("Unhandled write to cop0 register. RegIndex: %d", cop_reg);
@@ -373,6 +376,13 @@ void op_mfc0(Cpu *cpu, Ins ins) {
   uint8_t cop_reg = get_cop_reg(ins);
 
   switch (cop_reg) {
+    case 6:
+    case 7:
+      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, 0x0);
+      break;
+    case 8:
+      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, cpu->bad_v_adr.data);
+      break;
     case 12:
       cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, cpu->sr);
       break;
@@ -381,6 +391,10 @@ void op_mfc0(Cpu *cpu, Ins ins) {
       break;
     case 14:
       cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, cpu->epc.data);
+      break;
+    case 15:
+      // Default PRID Value
+      cpu->load_delay_slot = MAKE_LoadDelaySlot(rt, 0x2);
       break;
     default:
       fatal("Unhandled read from cop0 register. RegIndex: %d", cop_reg);

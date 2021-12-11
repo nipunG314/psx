@@ -14,6 +14,7 @@ typedef struct Cpu {
   Addr current_pc;
   uint32_t regs[32];
   uint32_t output_regs[32];
+  Addr bad_v_adr;
   uint32_t sr;
   uint32_t cause;
   Addr epc;
