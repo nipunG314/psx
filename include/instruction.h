@@ -20,6 +20,23 @@ DECLARE_TYPE(uint32_t, Ins)
 DECLARE_TYPE(uint8_t, RegIndex)
 DECLARE_TYPE(uint32_t, Addr)
 
+static uint32_t const RegionMask[] = {
+  // KUSEG - 2GB
+  0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+  // KSEG0 - 512MB
+  0x7FFFFFFF,
+  // KSEG1 - 512MB
+  0x1FFFFFFF,
+  // KSEG2 - 1GB
+  0xFFFFFFFF, 0xFFFFFFFF
+};
+
+static inline Addr mask_region(Addr addr) {
+  uint8_t index = addr.data >> 29;
+
+  return MAKE_Addr(addr.data & RegionMask[index]);
+}
+
 typedef struct LoadDelaySlot {
   RegIndex index;
   uint32_t val;

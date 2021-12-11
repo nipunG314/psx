@@ -6,23 +6,6 @@
 #include "output_logger.h"
 #include "flag.h"
 
-uint32_t const RegionMask[] = {
-  // KUSEG - 2GB
-  0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-  // KSEG0 - 512MB
-  0x7FFFFFFF,
-  // KSEG1 - 512MB
-  0x1FFFFFFF,
-  // KSEG2 - 1GB
-  0xFFFFFFFF, 0xFFFFFFFF
-};
-
-Addr mask_region(Addr addr) {
-  uint8_t index = addr.data >> 29;
-
-  return MAKE_Addr(addr.data & RegionMask[index]);
-}
-
 Interconnect init_interconnect(char const *bios_filename) {
   Interconnect inter = {0};
 

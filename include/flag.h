@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 
 #include "instruction.h"
 #include "log.h"
@@ -18,6 +19,7 @@ FlagSet flag_set;
 Addr current_pc;
 Ins current_ins;
 uint8_t logging_pc;
+char *rom_filename;
 
 static inline bool get_flag(Flag flag) {
   return flag_set & flag;
@@ -33,6 +35,15 @@ static inline void set_pc(Addr pc) {
 
 static inline void set_ins(Ins ins) {
   current_ins = ins;
+}
+
+static inline void set_rom_filename(char const *filename) {
+  rom_filename = calloc(strlen(filename) + 1, 1);
+  strcpy(rom_filename, filename);
+}
+
+static inline char *get_rom_filename() {
+  return rom_filename;
 }
 
 #define LOG_PC() \
