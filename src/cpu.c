@@ -993,6 +993,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
     case 0xD:
       op_ori(cpu, ins);
       break;
+    case 0xE:
+      op_xori(cpu, ins);
+      break;
     case 0x2B:
       op_sw(cpu, ins);
       break;
