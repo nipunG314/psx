@@ -13,6 +13,7 @@ Interconnect init_interconnect(char const *bios_filename) {
   inter.ram = init_ram();
   inter.dma = init_dma();
   inter.gpu = init_gpu();
+  inter.pad = init_scratchpad();
   inter.output_log_index = init_output_log();
 
   return inter;
@@ -56,6 +57,11 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
     return 0;
   }
 
+  offset = range_contains(range(SCRATCH_PAD), addr);
+  if (offset >= 0) {
+    return load_scratchpad32(&inter->pad, MAKE_Addr(offset));
+  }
+
   fatal("Unhandled load32 call. Address: 0x%08X", addr);
 }
 
@@ -78,6 +84,11 @@ uint16_t load_inter16(Interconnect *inter, Addr addr) {
     return 0;
   }
 
+  offset = range_contains(range(SCRATCH_PAD), addr);
+  if (offset >= 0) {
+    return load_scratchpad16(&inter->pad, MAKE_Addr(offset));
+  }
+
   fatal("Unhandled load16 call. Address: 0x%08X", addr);
 }
 
@@ -95,6 +106,11 @@ uint8_t load_inter8(Interconnect *inter, Addr addr) {
   offset = range_contains(range(EXPANSION1), addr);
   if (offset >= 0)
     return 0xFF;
+
+  offset = range_contains(range(SCRATCH_PAD), addr);
+  if (offset >= 0) {
+    return load_scratchpad8(&inter->pad, MAKE_Addr(offset));
+  }
 
   fatal("Unhandled load8 call. Address: 0x%08X", addr);
 }
@@ -163,6 +179,12 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
     return;
   }
 
+  offset = range_contains(range(SCRATCH_PAD), addr);
+  if (offset >= 0) {
+    store_scratchpad32(&inter->pad, MAKE_Addr(offset), val);
+    return;
+  }
+
   offset = range_contains(range(TIMERS), addr);
   if (offset >= 0) {
     log_error("Unhandled Write to TIMERS register. addr: 0x%08X. val: 0x%08X", addr, val);
@@ -178,6 +200,12 @@ void store_inter16(Interconnect *inter, Addr addr, uint16_t val) {
   int32_t offset = range_contains(range(RAM), addr);
   if (offset >= 0) {
     store_ram16(&inter->ram, MAKE_Addr(offset), val);
+    return;
+  }
+
+  offset = range_contains(range(SCRATCH_PAD), addr);
+  if (offset >= 0) {
+    store_scratchpad16(&inter->pad, MAKE_Addr(offset), val);
     return;
   }
 
@@ -210,6 +238,12 @@ void store_inter8(Interconnect *inter, Addr addr, uint8_t val) {
   int32_t offset = range_contains(range(RAM), addr);
   if (offset >= 0) {
     store_ram8(&inter->ram, MAKE_Addr(offset), val);
+    return;
+  }
+
+  offset = range_contains(range(SCRATCH_PAD), addr);
+  if (offset >= 0) {
+    store_scratchpad8(&inter->pad, MAKE_Addr(offset), val);
     return;
   }
 
@@ -427,4 +461,5 @@ void destroy_interconnect(Interconnect *inter) {
   destroy_bios(&inter->bios);
   destroy_ram(&inter->ram);
   destroy_gpu(&inter->gpu);
+  destroy_scratchpad(&inter->pad);
 }

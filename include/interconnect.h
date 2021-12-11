@@ -2,6 +2,7 @@
 #include "ram.h"
 #include "dma.h"
 #include "gpu.h"
+#include "scratch.h"
 #include "instruction.h"
 
 #ifndef INTERCONNECT_H
@@ -12,6 +13,7 @@ typedef struct Interconnect {
   Ram ram;
   Dma dma;
   Gpu gpu;
+  Scratchpad pad;
   size_t output_log_index;
 } Interconnect;
 

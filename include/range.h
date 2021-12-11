@@ -23,6 +23,7 @@ typedef enum RangeIndex {
   TIMERS,
   DMA,
   GPU,
+  SCRATCH_PAD,
   RANGE_COUNT
 } RangeIndex;
 
@@ -38,7 +39,8 @@ static Range ranges[RANGE_COUNT] = {
   [IRQ] = {0x1F801070, 8},
   [TIMERS] = {0x1F801100, 48},
   [DMA] = {0x1F801080, 0x80},
-  [GPU] = {0x1F801810, 8}
+  [GPU] = {0x1F801810, 8},
+  [SCRATCH_PAD] = {0x1F800000, 1024}
 };
 
 static inline Range range(RangeIndex index) {
