@@ -3,4 +3,5 @@ psx_test
 *.swp
 *.BIN
 *.exe
+jac_tests/
 compile_commands.json
