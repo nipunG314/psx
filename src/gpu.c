@@ -91,6 +91,7 @@ Gpu init_gpu() {
   gpu.image_load_buffer.x = 0;
   gpu.image_load_buffer.y = 0;
   gpu.renderer = init_renderer();
+  gpu.read_word = 0;
   gpu.output_log_index = init_output_log();
 
   return gpu;
@@ -146,9 +147,7 @@ uint32_t gpu_status(Gpu *gpu) {
 }
 
 uint32_t gpu_read(Gpu *gpu) {
-  // TempFix: Return actual GPUREAD data once it
-  // has been initialized
-  return 0;
+  return gpu->read_word;
 }
 
 void gp0_nop(Gpu *gpu, uint32_t val) {
@@ -554,6 +553,41 @@ void gp1_acknowledge_irq(Gpu *gpu, uint32_t val) {
   gpu->interrupt_active = false;
 }
 
+void gp1_get_info(Gpu *gpu, uint32_t val) {
+  switch (val & 0xF) {
+    case 2: {
+      uint32_t x_mask = gpu->texture_window_x_mask;
+      uint32_t y_mask = gpu->texture_window_y_mask;
+      uint32_t x_offset = gpu->texture_window_x_offset;
+      uint32_t y_offset = gpu->texture_window_y_offset;
+      gpu->read_word = x_mask | (y_mask << 8) | (x_offset << 16) | (y_offset << 24);
+    } break;
+    case 3: {
+      uint32_t top = gpu->drawing_area_top;
+      uint32_t left = gpu->drawing_area_left;
+      gpu->read_word = left | (top << 10);
+    } break;
+    case 4: {
+      uint32_t bottom = gpu->drawing_area_bottom;
+      uint32_t right = gpu->drawing_area_right;
+      gpu->read_word = right | (bottom << 10);
+    } break;
+    case 5: {
+      uint32_t x = gpu->drawing_x_offset;
+      uint32_t y = gpu->drawing_y_offset;
+      x = x & 0x7FF;
+      y = y & 0x7FF;
+      gpu->read_word = x | (y << 11);
+    } break;
+    case 7:
+      gpu->read_word = 2;
+      break;
+    case 8:
+      gpu->read_word = 0;
+      break;
+  }
+}
+
 void gpu_gp1(Gpu *gpu, uint32_t val) {
   uint8_t opcode = (val >> 24) & 0xFF;
 
@@ -586,6 +620,9 @@ void gpu_gp1(Gpu *gpu, uint32_t val) {
       break;
     case 0x08:
       gp1_display_mode(gpu, val);
+      break;
+    case 0x10:
+      gp1_get_info(gpu, val);
       break;
     default:
       fatal("Unhandled GP1 Command: 0x%08X", val);

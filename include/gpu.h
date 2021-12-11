@@ -255,6 +255,7 @@ typedef struct Gpu {
   GP0Mode gp0_mode;
   GpuImageLoadBuffer image_load_buffer;
   GpuRenderer renderer;
+  uint32_t read_word;
   size_t output_log_index;
 } Gpu;
 
