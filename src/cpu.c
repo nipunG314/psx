@@ -168,16 +168,16 @@ void exception(Cpu *cpu, Exception exp) {
   cpu->sr = cpu->sr & ~0x3F;
   cpu->sr = cpu->sr | ((mode << 2) & 0x3F);
 
-  cpu->cause = exp << 2;
+  cpu->cause &= ~0x7C;
+  cpu->cause |= exp << 2;
   cpu->epc = cpu->current_pc;
-  if (exp == LoadAddressError || exp == StoreAddressError)
-    cpu->bad_v_adr = cpu->current_pc;
-  else
-    cpu->epc = cpu->current_pc;
 
   if (cpu->delay_slot) {
     cpu->epc = MAKE_Addr(cpu->epc.data - 4);
     cpu->cause = cpu->cause | (1 << 31);
+  } else {
+    cpu->epc = cpu->current_pc;
+    cpu->cause = cpu->cause & ~(1 << 31);
   }
 
   cpu->pc = handler_addr;
@@ -405,7 +405,8 @@ void op_mtc0(Cpu *cpu, Ins ins) {
       cpu->sr = val;
       break;
     case 13:
-      cpu->cause = val;
+      cpu->cause &= ~0x300;
+      cpu->cause |= val & 0x300;
       break;
     default:
       fatal("Unhandled write to cop0 register. RegIndex: %d", cop_reg);
@@ -457,7 +458,7 @@ void op_rfe(Cpu *cpu, Ins ins) {
     fatal("Invalid cop0 instruction: 0x%08X", ins);
 
   uint32_t mode = cpu->sr & 0x3F;
-  cpu->sr = cpu->sr & ~0x3F;
+  cpu->sr = cpu->sr & ~0xF;
   cpu->sr = cpu->sr | (mode >> 2);
 }
 
