@@ -328,6 +328,17 @@ void gp0_monochrome_rect(Gpu *gpu, uint32_t val) {
   log_trace("STUB: Draw Monochrome Rect!");
 }
 
+void gp0_monochrome_rect_1x1(Gpu *gpu, uint32_t val) {
+  GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
+  GpuRenderer *renderer = &gpu->renderer;
+
+  pos_from_gp0(command_buffer->commands[1], renderer->pos[0]);
+  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
+
+  uint16_t *target = get_vram(renderer, renderer->pos[0][0], renderer->pos[0][1]);
+  *target = float_to_555(renderer->color[0]);
+}
+
 void gp0_image_load(Gpu *gpu, uint32_t val) {
   uint32_t width = gpu->gp0_command_buffer.commands[2] & 0xFFFF;
   uint32_t height = gpu->gp0_command_buffer.commands[2] >> 16;
@@ -392,6 +403,9 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
         gpu->gp0_method = gp0_monochrome_rect;
         gpu->gp0_words_remaining = 3;
         break;
+      case 0x68:
+        gpu->gp0_method = gp0_monochrome_rect_1x1;
+        gpu->gp0_words_remaining = 2;
       case 0xA0:
         gpu->gp0_method = gp0_image_load;
         gpu->gp0_words_remaining = 3;
