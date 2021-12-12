@@ -87,8 +87,8 @@ typedef enum GP0Mode {
   Gp0ImageLoadMode
 } GP0Mode;
 
-typedef float Vec2[2];
-typedef float Vec3[3];
+typedef int32_t Vec2[2];
+typedef int32_t Vec3[3];
 
 static inline void pos_from_gp0(uint32_t val, Vec2 vec) {
   int16_t x = val;
@@ -118,7 +118,7 @@ static inline void tex_from_gp0(uint32_t val, Vec2 vec) {
 
 typedef struct Gpu Gpu;
 
-static inline uint16_t float_to_555(Vec3 color) {
+static inline uint16_t vec_to_555(Vec3 color) {
   uint16_t r = color[0];
   uint16_t g = color[1];
   uint16_t b = color[2];
@@ -130,7 +130,7 @@ static inline uint16_t float_to_555(Vec3 color) {
   return (r << 10) | (g << 5) | b;
 }
 
-static inline uint32_t float_to_888(Vec3 color) {
+static inline uint32_t vec_to_888(Vec3 color) {
   uint32_t r = color[0];
   uint32_t g = color[1];
   uint32_t b = color[2];

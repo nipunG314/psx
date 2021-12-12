@@ -336,7 +336,7 @@ void gp0_monochrome_rect_1x1(Gpu *gpu, uint32_t val) {
   color_from_gp0(command_buffer->commands[0], renderer->color[0]);
 
   uint16_t *target = get_vram(renderer, renderer->pos[0][0], renderer->pos[0][1]);
-  *target = float_to_555(renderer->color[0]);
+  *target = vec_to_555(renderer->color[0]);
 }
 
 void gp0_image_load(Gpu *gpu, uint32_t val) {
@@ -690,18 +690,18 @@ void gpu_draw(Gpu *gpu) {
         uint16_t new_color;
         switch (gpu->blend_mode) {
           case GpuNoTexture:
-            *target = float_to_555(shaded_color);
+            *target = vec_to_555(shaded_color);
             break;
           case GpuBlendedTexture:
             switch (gpu->texture_depth) {
               case GpuTexture4Bits:
-                new_color = multiply_888_555(float_to_888(shaded_color), get_texel_4bit(gpu, interop_tex[0], interop_tex[1]));
+                new_color = multiply_888_555(vec_to_888(shaded_color), get_texel_4bit(gpu, interop_tex[0], interop_tex[1]));
                 break;
               case GpuTexture8Bits:
-                new_color = multiply_888_555(float_to_888(shaded_color), get_texel_8bit(gpu, interop_tex[0], interop_tex[1]));
+                new_color = multiply_888_555(vec_to_888(shaded_color), get_texel_8bit(gpu, interop_tex[0], interop_tex[1]));
                 break;
               case GpuTexture15Bits:
-                new_color = multiply_888_555(float_to_888(shaded_color), get_texel_15bit(gpu, interop_tex[0], interop_tex[1]));
+                new_color = multiply_888_555(vec_to_888(shaded_color), get_texel_15bit(gpu, interop_tex[0], interop_tex[1]));
                 break;
             }
             if (new_color)
