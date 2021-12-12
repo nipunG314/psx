@@ -25,6 +25,8 @@ GpuRenderer init_renderer() {
   if (renderer.vram_surface == NULL)
     fatal("SDLError: Couldn't initialize vram_surface: %s", SDL_GetError());
 
+  renderer.render_mode = GpuRenderTri;
+
   return renderer;
 }
 
@@ -230,24 +232,25 @@ void gp0_mask_bit_setting(Gpu *gpu, uint32_t val) {
 void gp0_monochrome_quad(Gpu *gpu, uint32_t val) {
   GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
   GpuRenderer *renderer = &gpu->renderer;
+  renderer->render_mode = GpuRenderTri;
 
-  pos_from_gp0(command_buffer->commands[1], renderer->pos[0]);
-  pos_from_gp0(command_buffer->commands[2], renderer->pos[1]);
-  pos_from_gp0(command_buffer->commands[3], renderer->pos[2]);
+  pos_from_gp0(command_buffer->commands[1], renderer->tri_pos[0]);
+  pos_from_gp0(command_buffer->commands[2], renderer->tri_pos[1]);
+  pos_from_gp0(command_buffer->commands[3], renderer->tri_pos[2]);
 
-  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
-  color_from_gp0(command_buffer->commands[0], renderer->color[1]);
-  color_from_gp0(command_buffer->commands[0], renderer->color[2]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[0]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[1]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[2]);
 
   gpu_draw(gpu);
 
-  pos_from_gp0(command_buffer->commands[2], renderer->pos[0]);
-  pos_from_gp0(command_buffer->commands[3], renderer->pos[1]);
-  pos_from_gp0(command_buffer->commands[4], renderer->pos[2]);
+  pos_from_gp0(command_buffer->commands[2], renderer->tri_pos[0]);
+  pos_from_gp0(command_buffer->commands[3], renderer->tri_pos[1]);
+  pos_from_gp0(command_buffer->commands[4], renderer->tri_pos[2]);
 
-  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
-  color_from_gp0(command_buffer->commands[0], renderer->color[1]);
-  color_from_gp0(command_buffer->commands[0], renderer->color[2]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[0]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[1]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[2]);
 
   gpu_draw(gpu);
 }
@@ -255,31 +258,32 @@ void gp0_monochrome_quad(Gpu *gpu, uint32_t val) {
 void gp0_texture_quad(Gpu *gpu, uint32_t val) {
   GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
   GpuRenderer *renderer = &gpu->renderer;
+  renderer->render_mode = GpuRenderTri;
 
   set_clut(gpu, command_buffer->commands[2] >> 16);
   set_texture_params(gpu, command_buffer->commands[4] >> 16);
 
-  pos_from_gp0(command_buffer->commands[1], renderer->pos[0]);
-  pos_from_gp0(command_buffer->commands[3], renderer->pos[1]);
-  pos_from_gp0(command_buffer->commands[5], renderer->pos[2]);
+  pos_from_gp0(command_buffer->commands[1], renderer->tri_pos[0]);
+  pos_from_gp0(command_buffer->commands[3], renderer->tri_pos[1]);
+  pos_from_gp0(command_buffer->commands[5], renderer->tri_pos[2]);
 
-  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
-  color_from_gp0(command_buffer->commands[0], renderer->color[1]);
-  color_from_gp0(command_buffer->commands[0], renderer->color[2]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[0]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[1]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[2]);
 
-  tex_from_gp0(command_buffer->commands[2], renderer->tex[0]);
-  tex_from_gp0(command_buffer->commands[4], renderer->tex[1]);
-  tex_from_gp0(command_buffer->commands[6], renderer->tex[2]);
+  tex_from_gp0(command_buffer->commands[2], renderer->tri_tex[0]);
+  tex_from_gp0(command_buffer->commands[4], renderer->tri_tex[1]);
+  tex_from_gp0(command_buffer->commands[6], renderer->tri_tex[2]);
 
   gpu_draw(gpu);
 
-  pos_from_gp0(command_buffer->commands[3], renderer->pos[0]);
-  pos_from_gp0(command_buffer->commands[5], renderer->pos[1]);
-  pos_from_gp0(command_buffer->commands[7], renderer->pos[2]);
+  pos_from_gp0(command_buffer->commands[3], renderer->tri_pos[0]);
+  pos_from_gp0(command_buffer->commands[5], renderer->tri_pos[1]);
+  pos_from_gp0(command_buffer->commands[7], renderer->tri_pos[2]);
 
-  tex_from_gp0(command_buffer->commands[4], renderer->tex[0]);
-  tex_from_gp0(command_buffer->commands[6], renderer->tex[1]);
-  tex_from_gp0(command_buffer->commands[8], renderer->tex[2]);
+  tex_from_gp0(command_buffer->commands[4], renderer->tri_tex[0]);
+  tex_from_gp0(command_buffer->commands[6], renderer->tri_tex[1]);
+  tex_from_gp0(command_buffer->commands[8], renderer->tri_tex[2]);
 
   gpu_draw(gpu);
 }
@@ -287,14 +291,15 @@ void gp0_texture_quad(Gpu *gpu, uint32_t val) {
 void gp0_shaded_tri(Gpu *gpu, uint32_t val) {
   GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
   GpuRenderer *renderer = &gpu->renderer;
+  renderer->render_mode = GpuRenderTri;
 
-  pos_from_gp0(command_buffer->commands[1], renderer->pos[0]);
-  pos_from_gp0(command_buffer->commands[3], renderer->pos[1]);
-  pos_from_gp0(command_buffer->commands[5], renderer->pos[2]);
+  pos_from_gp0(command_buffer->commands[1], renderer->tri_pos[0]);
+  pos_from_gp0(command_buffer->commands[3], renderer->tri_pos[1]);
+  pos_from_gp0(command_buffer->commands[5], renderer->tri_pos[2]);
 
-  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
-  color_from_gp0(command_buffer->commands[2], renderer->color[1]);
-  color_from_gp0(command_buffer->commands[4], renderer->color[2]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[0]);
+  color_from_gp0(command_buffer->commands[2], renderer->tri_color[1]);
+  color_from_gp0(command_buffer->commands[4], renderer->tri_color[2]);
 
   gpu_draw(gpu);
 }
@@ -302,24 +307,25 @@ void gp0_shaded_tri(Gpu *gpu, uint32_t val) {
 void gp0_shaded_quad(Gpu *gpu, uint32_t val) {
   GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
   GpuRenderer *renderer = &gpu->renderer;
+  renderer->render_mode = GpuRenderTri;
 
-  pos_from_gp0(command_buffer->commands[1], renderer->pos[0]);
-  pos_from_gp0(command_buffer->commands[3], renderer->pos[1]);
-  pos_from_gp0(command_buffer->commands[5], renderer->pos[2]);
+  pos_from_gp0(command_buffer->commands[1], renderer->tri_pos[0]);
+  pos_from_gp0(command_buffer->commands[3], renderer->tri_pos[1]);
+  pos_from_gp0(command_buffer->commands[5], renderer->tri_pos[2]);
 
-  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
-  color_from_gp0(command_buffer->commands[2], renderer->color[1]);
-  color_from_gp0(command_buffer->commands[4], renderer->color[2]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[0]);
+  color_from_gp0(command_buffer->commands[2], renderer->tri_color[1]);
+  color_from_gp0(command_buffer->commands[4], renderer->tri_color[2]);
 
   gpu_draw(gpu);
 
-  pos_from_gp0(command_buffer->commands[3], renderer->pos[0]);
-  pos_from_gp0(command_buffer->commands[5], renderer->pos[1]);
-  pos_from_gp0(command_buffer->commands[7], renderer->pos[2]);
+  pos_from_gp0(command_buffer->commands[3], renderer->tri_pos[0]);
+  pos_from_gp0(command_buffer->commands[5], renderer->tri_pos[1]);
+  pos_from_gp0(command_buffer->commands[7], renderer->tri_pos[2]);
 
-  color_from_gp0(command_buffer->commands[2], renderer->color[0]);
-  color_from_gp0(command_buffer->commands[4], renderer->color[1]);
-  color_from_gp0(command_buffer->commands[6], renderer->color[2]);
+  color_from_gp0(command_buffer->commands[2], renderer->tri_color[0]);
+  color_from_gp0(command_buffer->commands[4], renderer->tri_color[1]);
+  color_from_gp0(command_buffer->commands[6], renderer->tri_color[2]);
 
   gpu_draw(gpu);
 }
@@ -331,12 +337,13 @@ void gp0_monochrome_rect(Gpu *gpu, uint32_t val) {
 void gp0_monochrome_rect_1x1(Gpu *gpu, uint32_t val) {
   GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
   GpuRenderer *renderer = &gpu->renderer;
+  renderer->render_mode = GpuRenderRect;
 
-  pos_from_gp0(command_buffer->commands[1], renderer->pos[0]);
-  color_from_gp0(command_buffer->commands[0], renderer->color[0]);
+  pos_from_gp0(command_buffer->commands[1], renderer->tri_pos[0]);
+  color_from_gp0(command_buffer->commands[0], renderer->tri_color[0]);
 
-  uint16_t *target = get_vram(renderer, renderer->pos[0][0], renderer->pos[0][1]);
-  *target = vec_to_555(renderer->color[0]);
+  uint16_t *target = get_vram(renderer, renderer->tri_pos[0][0], renderer->tri_pos[0][1]);
+  *target = vec_to_555(renderer->tri_color[0]);
 }
 
 void gp0_image_load(Gpu *gpu, uint32_t val) {
@@ -645,45 +652,45 @@ void gpu_gp1(Gpu *gpu, uint32_t val) {
   print_output_log(gpu->output_log_index);
 }
 
-void gpu_draw(Gpu *gpu) {
+void gpu_draw_tri(Gpu *gpu) {
   GpuRenderer *renderer = &gpu->renderer;
 
   for (int i=0; i<3; i++) {
-    renderer->pos[i][0] += gpu->drawing_x_offset;
-    renderer->pos[i][1] += gpu->drawing_y_offset;
+    renderer->tri_pos[i][0] += gpu->drawing_x_offset;
+    renderer->tri_pos[i][1] += gpu->drawing_y_offset;
   }
 
-  float area = edge_func(renderer->pos[0], renderer->pos[1], renderer->pos[2]);
+  float area = edge_func(renderer->tri_pos[0], renderer->tri_pos[1], renderer->tri_pos[2]);
   if (area < 0) {
-    Vec2 tmp = {renderer->pos[1][0], renderer->pos[1][1]};
-    memcpy(renderer->pos[1], renderer->pos[2], sizeof renderer->pos[1]);
-    memcpy(renderer->pos[2], tmp, sizeof renderer->pos[2]);
-    tmp[0] = renderer->tex[1][0];
-    tmp[1] = renderer->tex[1][1];
-    memcpy(renderer->tex[1], renderer->tex[2], sizeof renderer->tex[1]);
-    memcpy(renderer->tex[2], tmp, sizeof renderer->tex[2]);
+    Vec2 tmp = {renderer->tri_pos[1][0], renderer->tri_pos[1][1]};
+    memcpy(renderer->tri_pos[1], renderer->tri_pos[2], sizeof renderer->tri_pos[1]);
+    memcpy(renderer->tri_pos[2], tmp, sizeof renderer->tri_pos[2]);
+    tmp[0] = renderer->tri_tex[1][0];
+    tmp[1] = renderer->tri_tex[1][1];
+    memcpy(renderer->tri_tex[1], renderer->tri_tex[2], sizeof renderer->tri_tex[1]);
+    memcpy(renderer->tri_tex[2], tmp, sizeof renderer->tri_tex[2]);
     area *= -1;
   }
 
   for(uint16_t i = gpu->drawing_area_left; i <= gpu->drawing_area_right; i++) {
     for(uint16_t j = gpu->drawing_area_top; j <= gpu->drawing_area_bottom; j++) {
       Vec2 p = {i + 0.5f, j + 0.5f};
-      float w0 = edge_func(renderer->pos[1], renderer->pos[2], p);
-      float w1 = edge_func(renderer->pos[2], renderer->pos[0], p);
-      float w2 = edge_func(renderer->pos[0], renderer->pos[1], p);
+      float w0 = edge_func(renderer->tri_pos[1], renderer->tri_pos[2], p);
+      float w1 = edge_func(renderer->tri_pos[2], renderer->tri_pos[0], p);
+      float w2 = edge_func(renderer->tri_pos[0], renderer->tri_pos[1], p);
       if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
         w0 /= area;
         w1 /= area;
         w2 /= area;
 
         Vec3 shaded_color = {
-          w0 * renderer->color[0][0] + w1 * renderer->color[1][0] + w2 * renderer->color[2][0],
-          w0 * renderer->color[0][1] + w1 * renderer->color[1][1] + w2 * renderer->color[2][1],
-          w0 * renderer->color[0][2] + w1 * renderer->color[1][2] + w2 * renderer->color[2][2]
+          w0 * renderer->tri_color[0][0] + w1 * renderer->tri_color[1][0] + w2 * renderer->tri_color[2][0],
+          w0 * renderer->tri_color[0][1] + w1 * renderer->tri_color[1][1] + w2 * renderer->tri_color[2][1],
+          w0 * renderer->tri_color[0][2] + w1 * renderer->tri_color[1][2] + w2 * renderer->tri_color[2][2]
         };
         Vec2 interop_tex = {
-          w0 * renderer->tex[0][0] + w1 * renderer->tex[1][0] + w2 * renderer->tex[2][0],
-          w0 * renderer->tex[0][1] + w1 * renderer->tex[1][1] + w2 * renderer->tex[2][1],
+          w0 * renderer->tri_tex[0][0] + w1 * renderer->tri_tex[1][0] + w2 * renderer->tri_tex[2][0],
+          w0 * renderer->tri_tex[0][1] + w1 * renderer->tri_tex[1][1] + w2 * renderer->tri_tex[2][1],
         };
 
         uint16_t *target = get_vram(renderer, i, j);
@@ -725,6 +732,20 @@ void gpu_draw(Gpu *gpu) {
         }
       }
     }
+  }
+}
+
+void gpu_draw_rect(Gpu *gpu) {
+}
+
+void gpu_draw(Gpu *gpu) {
+  switch (gpu->renderer.render_mode) {
+    case GpuRenderTri:
+      gpu_draw_tri(gpu);
+      break;
+    case GpuRenderRect:
+      gpu_draw_rect(gpu);
+      break;
   }
 }
 

@@ -154,13 +154,23 @@ static inline uint16_t multiply_888_555(uint32_t color888, uint16_t color555) {
   return (r << 10) | (g << 5) | b;
 }
 
+typedef enum GpuRenderMode {
+  GpuRenderTri,
+  GpuRenderRect
+} GpuRenderMode;
+
 typedef struct GpuRenderer {
   SDL_Window *window;
   SDL_Surface *window_surface;
   SDL_Surface *vram_surface;
-  Vec2 pos[3];
-  Vec3 color[3];
-  Vec2 tex[3];
+  GpuRenderMode render_mode;
+  Vec2 tri_pos[3];
+  Vec3 tri_color[3];
+  Vec2 tri_tex[3];
+  Vec2 rect_pos;
+  Vec2 rect_size;
+  Vec3 rect_color;
+  Vec2 rect_tex;
 } GpuRenderer;
 
 GpuRenderer init_renderer();
