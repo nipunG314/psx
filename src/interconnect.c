@@ -84,6 +84,12 @@ uint16_t load_inter16(Interconnect *inter, Addr addr) {
     return 0;
   }
 
+  offset = range_contains(range(TIMERS), addr);
+  if (offset >= 0) {
+    log_error("Unhandled read from TIMERS. addr: 0x%08X", addr);
+    return 0;
+  }
+
   offset = range_contains(range(SCRATCH_PAD), addr);
   if (offset >= 0) {
     return load_scratchpad16(&inter->pad, MAKE_Addr(offset));
