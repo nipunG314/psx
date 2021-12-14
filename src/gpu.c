@@ -158,6 +158,34 @@ void gp0_nop(Gpu *gpu, uint32_t val) {
 void gp0_clear_cache(Gpu *gpu, uint32_t val) {
 }
 
+void gp0_fill_rect(Gpu *gpu, uint32_t val) {
+  GpuCommandBuffer *command_buffer = &gpu->gp0_command_buffer;
+  GpuRenderer *renderer = &gpu->renderer;
+  renderer->render_mode = GpuRenderRect;
+
+  pos_from_gp0(command_buffer->commands[1], renderer->rect_pos);
+  pos_from_gp0(command_buffer->commands[2], renderer->rect_size);
+  color_from_gp0(command_buffer->commands[0], renderer->rect_color);
+
+  uint16_t left = renderer->rect_pos[0] & 0x3F0;
+  uint16_t top = renderer->rect_pos[1] & 0x1FF;
+  int16_t _width = renderer->rect_size[0] & 0x7FF;
+  uint16_t width = (_width == 0x400) ? 0 : ((_width + 0xF) & 0x3F0);
+  uint16_t height = renderer->rect_size[1] & 0x1FF;
+  uint16_t right = left + width;
+  uint16_t bottom = top + height;
+
+  if (right > 0x400)
+    right = 0x400;
+  if (bottom > 0x200)
+    bottom = 0x200;
+
+  renderer->rect_size[0] = right - left;
+  renderer->rect_size[1] = bottom - top;
+
+  gpu_draw(gpu);
+}
+
 void gp0_draw_mode(Gpu *gpu, uint32_t val) {
   gpu->texture_page[0] = (val & 0xF) << 6;
   gpu->texture_page[1] = ((val >> 4) & 1) << 8;
@@ -390,6 +418,9 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
         gpu->gp0_method = gp0_clear_cache;
         gpu->gp0_words_remaining = 1;
         break;
+      case 0x02:
+        gpu->gp0_method = gp0_fill_rect;
+        gpu->gp0_words_remaining = 3;
       case 0x28:
         gpu->gp0_method = gp0_monochrome_quad;
         gpu->gp0_words_remaining = 5;
@@ -736,6 +767,42 @@ void gpu_draw_tri(Gpu *gpu) {
 }
 
 void gpu_draw_rect(Gpu *gpu) {
+  GpuRenderer *renderer = &gpu->renderer;
+
+  renderer->rect_pos[0] += gpu->drawing_x_offset;
+  renderer->rect_pos[1] += gpu->drawing_y_offset;
+
+  uint16_t right = renderer->rect_pos[0] + renderer->rect_size[0];
+  uint16_t bottom = renderer->rect_pos[1] + renderer->rect_size[1];
+
+  for(uint16_t i = renderer->rect_pos[0]; i < right; i++) {
+    for(uint16_t j = renderer->rect_pos[1]; j < bottom; j++) {
+      Vec2 interop_tex = {
+        renderer->rect_tex[0] + (i - renderer->rect_pos[0]),
+        renderer->rect_tex[1] + (j - renderer->rect_pos[1])
+      };
+
+      uint16_t *target = get_vram(renderer, i, j);
+      uint16_t new_color;
+      if (gpu->blend_mode == GpuNoTexture)
+        *target = vec_to_555(renderer->rect_color);
+      else {
+        switch (gpu->texture_depth) {
+          case GpuTexture4Bits:
+            new_color = get_texel_4bit(gpu, interop_tex[0], interop_tex[1]);
+            break;
+          case GpuTexture8Bits:
+            new_color = get_texel_8bit(gpu, interop_tex[0], interop_tex[1]);
+            break;
+          case GpuTexture15Bits:
+            new_color = get_texel_15bit(gpu, interop_tex[0], interop_tex[1]);
+            break;
+        }
+        if (new_color)
+          *target = new_color;
+      }
+    }
+  }
 }
 
 void gpu_draw(Gpu *gpu) {
