@@ -18,13 +18,8 @@ typedef struct Interconnect {
 } Interconnect;
 
 Interconnect init_interconnect(char const *bios_filename);
-uint32_t load_inter32(Interconnect *inter, Addr addr);
-uint16_t load_inter16(Interconnect *inter, Addr addr);
-uint8_t load_inter8(Interconnect *inter, Addr addr);
-void store_inter32(Interconnect *inter, Addr addr, uint32_t val);
-void store_inter16(Interconnect *inter, Addr addr, uint16_t val);
-void store_inter8(Interconnect *inter, Addr addr, uint8_t val);
-
+uint32_t load(Interconnect *inter, Addr addr, AddrType type);
+void store(Interconnect *inter, Addr addr, uint32_t val, AddrType type);
 uint32_t get_dma_reg(Interconnect *inter, Addr offset);
 void set_dma_reg(Interconnect *inter, Addr offset, uint32_t val);
 void perform_dma(Interconnect *inter, DmaPort port);

@@ -20,9 +20,7 @@ uint32_t load_ram32(Ram *ram, Addr offset) {
   uint32_t b2 = ram->data[offset.data++]; 
   uint32_t b3 = ram->data[offset.data++]; 
 
-  uint32_t ret = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
-
-  return ret;
+  return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 }
 
 uint16_t load_ram16(Ram *ram, Addr offset) {
@@ -35,6 +33,17 @@ uint16_t load_ram16(Ram *ram, Addr offset) {
 
 uint8_t load_ram8(Ram *ram, Addr offset) {
   return ram->data[offset.data];
+}
+
+uint32_t load_ram(Ram *ram, Addr offset, AddrType type) {
+  switch (type) {
+    case AddrByte:
+      return load_ram8(ram, offset);
+    case AddrHalf:
+      return load_ram16(ram, offset);
+    case AddrWord:
+      return load_ram32(ram, offset);
+  }
 }
 
 void store_ram32(Ram *ram, Addr offset, uint32_t val) {
@@ -61,6 +70,20 @@ void store_ram16(Ram *ram, Addr offset, uint16_t val) {
 
 void store_ram8(Ram *ram, Addr offset, uint8_t val) {
   ram->data[offset.data] = val;
+}
+
+void store_ram(Ram *ram, Addr offset, uint32_t val, AddrType type) {
+  switch (type) {
+    case AddrByte:
+      store_ram8(ram, offset, val);
+      break;
+    case AddrHalf:
+      store_ram16(ram, offset, val);
+      break;
+    case AddrWord:
+      store_ram32(ram, offset, val);
+      break;
+  }
 }
 
 void destroy_ram(Ram *ram) {

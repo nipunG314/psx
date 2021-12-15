@@ -16,6 +16,12 @@ static inline N MAKE_##N(T x) {\
 extern char const *funcs[];
 extern char const *special_funcs[];
 
+typedef enum AddrType {
+  AddrByte,
+  AddrHalf,
+  AddrWord
+} AddrType;
+
 DECLARE_TYPE(uint32_t, Ins)
 DECLARE_TYPE(uint8_t, RegIndex)
 DECLARE_TYPE(uint32_t, Addr)

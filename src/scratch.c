@@ -37,6 +37,17 @@ uint8_t load_scratchpad8(Scratchpad *scratchpad, Addr offset) {
   return scratchpad->data[offset.data];
 }
 
+uint32_t load_scratchpad(Scratchpad *scratchpad, Addr offset, AddrType type) {
+  switch (type) {
+    case AddrByte:
+      return load_scratchpad8(scratchpad, offset);
+    case AddrHalf:
+      return load_scratchpad16(scratchpad, offset);
+    case AddrWord:
+      return load_scratchpad32(scratchpad, offset);
+  }
+}
+
 void store_scratchpad32(Scratchpad *scratchpad, Addr offset, uint32_t val) {
 
   uint8_t b0 = val;
@@ -61,6 +72,20 @@ void store_scratchpad16(Scratchpad *scratchpad, Addr offset, uint16_t val) {
 
 void store_scratchpad8(Scratchpad *scratchpad, Addr offset, uint8_t val) {
   scratchpad->data[offset.data] = val;
+}
+
+void store_scratchpad(Scratchpad *scratchpad, Addr offset, uint32_t val, AddrType type) {
+  switch (type) {
+    case AddrByte:
+      store_scratchpad8(scratchpad, offset, val);
+      break;
+    case AddrHalf:
+      store_scratchpad16(scratchpad, offset, val);
+      break;
+    case AddrWord:
+      store_scratchpad32(scratchpad, offset, val);
+      break;
+  }
 }
 
 void destroy_scratchpad(Scratchpad *scratchpad) {

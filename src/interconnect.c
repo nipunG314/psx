@@ -19,20 +19,20 @@ Interconnect init_interconnect(char const *bios_filename) {
   return inter;
 }
 
-uint32_t load_inter32(Interconnect *inter, Addr addr) {
+uint32_t load(Interconnect *inter, Addr addr, AddrType type) {
   addr = mask_region(addr);
 
   int32_t offset = range_contains(range(BIOS), addr);
   if (offset >= 0)
-    return load_bios32(&inter->bios, MAKE_Addr(offset));
+    return load_bios(&inter->bios, MAKE_Addr(offset), type);
 
   offset = range_contains(range(RAM), addr);
   if (offset >= 0)
-    return load_ram32(&inter->ram, MAKE_Addr(offset));
+    return load_ram(&inter->ram, MAKE_Addr(offset), type);
 
   offset = range_contains(range(IRQ), addr);
   if (offset >= 0) {
-    log_error("Unhandled read from IRQ. addr: 0x%08X", addr);
+    log_error("Unhandled read from IRQ. addr: 0x%08X, type: %d", addr, type);
     return 0;
   }
 
@@ -53,75 +53,29 @@ uint32_t load_inter32(Interconnect *inter, Addr addr) {
 
   offset = range_contains(range(TIMERS), addr);
   if (offset >= 0) {
-    log_error("Unhandled read from TIMERS. addr: 0x%08X", addr);
+    log_error("Unhandled read from TIMERS. addr: 0x%08X, type: %d", addr, type);
     return 0;
   }
-
-  offset = range_contains(range(SCRATCH_PAD), addr);
-  if (offset >= 0) {
-    return load_scratchpad32(&inter->pad, MAKE_Addr(offset));
-  }
-
-  fatal("Unhandled load32 call. Address: 0x%08X", addr);
-}
-
-uint16_t load_inter16(Interconnect *inter, Addr addr) {
-  addr = mask_region(addr);
-
-  int32_t offset = range_contains(range(RAM), addr);
-  if (offset >= 0)
-    return load_ram16(&inter->ram, MAKE_Addr(offset));
 
   offset = range_contains(range(SPU), addr);
   if (offset >= 0) {
-    log_error("Unhandled read from SPU. addr: 0x%08X", addr);
-    return 0;
-  }
-
-  offset = range_contains(range(IRQ), addr);
-  if (offset >= 0) {
-    log_error("Unhandled read from IRQ. addr: 0x%08X", addr);
-    return 0;
-  }
-
-  offset = range_contains(range(TIMERS), addr);
-  if (offset >= 0) {
-    log_error("Unhandled read from TIMERS. addr: 0x%08X", addr);
+    log_error("Unhandled read from SPU. addr: 0x%08X, type: %d", addr, type);
     return 0;
   }
 
   offset = range_contains(range(SCRATCH_PAD), addr);
   if (offset >= 0) {
-    return load_scratchpad16(&inter->pad, MAKE_Addr(offset));
+    return load_scratchpad(&inter->pad, MAKE_Addr(offset), type);
   }
-
-  fatal("Unhandled load16 call. Address: 0x%08X", addr);
-}
-
-uint8_t load_inter8(Interconnect *inter, Addr addr) {
-  addr = mask_region(addr);
-
-  int32_t offset = range_contains(range(BIOS), addr);
-  if (offset >= 0)
-    return load_bios8(&inter->bios, MAKE_Addr(offset));
-
-  offset = range_contains(range(RAM), addr);
-  if (offset >= 0)
-    return load_ram8(&inter->ram, MAKE_Addr(offset));
 
   offset = range_contains(range(EXPANSION1), addr);
   if (offset >= 0)
     return 0xFF;
 
-  offset = range_contains(range(SCRATCH_PAD), addr);
-  if (offset >= 0) {
-    return load_scratchpad8(&inter->pad, MAKE_Addr(offset));
-  }
-
-  fatal("Unhandled load8 call. Address: 0x%08X", addr);
+  fatal("Unhandled load call. Address: 0x%08X, Type: %d", addr, type);
 }
 
-void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
+void store(Interconnect *inter, Addr addr, uint32_t val, AddrType type) {
   addr = mask_region(addr);
 
   int32_t offset = range_contains(range(MEM_CONTROL), addr);
@@ -136,7 +90,7 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
           fatal("Bad Expansion 2: Base Address: 0x%08X", val);
         break;
       default:
-        log_error("Unhandled Write to MEM_CONTROL register. addr: 0x%08X. val: 0x%08X", addr, val);
+        log_error("Unhandled Write to MEM_CONTROL register. addr: 0x%08X. val: 0x%08X, type: %d", addr, val, type);
     }
 
     return;
@@ -144,25 +98,25 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
 
   offset = range_contains(range(RAM), addr);
   if (offset >= 0) {
-    store_ram32(&inter->ram, MAKE_Addr(offset), val);
+    store_ram(&inter->ram, MAKE_Addr(offset), val, type);
     return;
   }
 
   offset = range_contains(range(RAM_SIZE), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to RAM_SIZE register. addr: 0x%08X. val: 0x%08X", addr, val);
+    log_error("Unhandled Write to RAM_SIZE register. addr: 0x%08X. val: 0x%08X, type: %d", addr, val, type);
     return;
   }
 
   offset = range_contains(range(CACHE_CONTROL), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to CACHE_CONTROL register. addr: 0x%08X. val: 0x%08X", addr, val);
+    log_error("Unhandled Write to CACHE_CONTROL register. addr: 0x%08X. val: 0x%08X, type: %d", addr, val, type);
     return;
   }
 
   offset = range_contains(range(IRQ), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to IRQ register. addr: 0x%08X. val: 0x%08X", addr, val);
+    log_error("Unhandled Write to IRQ register. addr: 0x%08X. val: 0x%08X, type: %d", addr, val, type);
     return;
   }
 
@@ -187,79 +141,29 @@ void store_inter32(Interconnect *inter, Addr addr, uint32_t val) {
 
   offset = range_contains(range(SCRATCH_PAD), addr);
   if (offset >= 0) {
-    store_scratchpad32(&inter->pad, MAKE_Addr(offset), val);
+    store_scratchpad(&inter->pad, MAKE_Addr(offset), val, type);
     return;
   }
 
   offset = range_contains(range(TIMERS), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to TIMERS register. addr: 0x%08X. val: 0x%08X", addr, val);
-    return;
-  }
-
-  fatal("Unhandled store32 call. addr: 0x%08X, val: 0x%08X", addr, val);
-}
-
-void store_inter16(Interconnect *inter, Addr addr, uint16_t val) {
-  addr = mask_region(addr);
-
-  int32_t offset = range_contains(range(RAM), addr);
-  if (offset >= 0) {
-    store_ram16(&inter->ram, MAKE_Addr(offset), val);
-    return;
-  }
-
-  offset = range_contains(range(SCRATCH_PAD), addr);
-  if (offset >= 0) {
-    store_scratchpad16(&inter->pad, MAKE_Addr(offset), val);
+    log_error("Unhandled Write to TIMERS register. addr: 0x%08X. val: 0x%08X, type: %d", addr, val, type);
     return;
   }
 
   offset = range_contains(range(SPU), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to SPU registers. addr: 0x%08X. val: 0x%08X", addr, val);
-    return;
-  }
-
-  offset = range_contains(range(TIMERS), addr);
-  if (offset >= 0) {
-    log_error("Unhandled Write to TIMER registers. addr: 0x%08X. val: 0x%08X", addr, val);
-    return;
-  }
-
-  offset = range_contains(range(IRQ), addr);
-  if (offset >= 0) {
-    log_error("Unhandled Write from IRQ. addr: 0x%08X", addr);
-    return;
-  }
-
-  LOG_PC();
-  LOG_INS();
-  fatal("Unhandled store16 call. addr: 0x%08X, val: 0x%08X", addr, val);
-}
-
-void store_inter8(Interconnect *inter, Addr addr, uint8_t val) {
-  addr = mask_region(addr);
-
-  int32_t offset = range_contains(range(RAM), addr);
-  if (offset >= 0) {
-    store_ram8(&inter->ram, MAKE_Addr(offset), val);
-    return;
-  }
-
-  offset = range_contains(range(SCRATCH_PAD), addr);
-  if (offset >= 0) {
-    store_scratchpad8(&inter->pad, MAKE_Addr(offset), val);
+    log_error("Unhandled Write to SPU registers. addr: 0x%08X. val: 0x%08X, type: %d", addr, val, type);
     return;
   }
 
   offset = range_contains(range(EXPANSION2), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to EXPANSION2 registers. addr: 0x%08X. val: 0x%08X", addr, val);
+    log_error("Unhandled Write to EXPANSION2 registers. addr: 0x%08X. val: 0x%08X, type: %d", addr, val, type);
     return;
   }
 
-  fatal("Unhandled store8 call. addr: 0x%08X, val: 0x%08X", addr, val);
+  fatal("Unhandled store call. addr: 0x%08X, val: 0x%08X, type: %d", addr, val, type);
 }
 
 uint32_t get_dma_reg(Interconnect *inter, Addr offset) {
@@ -380,7 +284,7 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
     switch (channel->direction) {
       case DmaFromRam:
         {
-          uint32_t source_word = load_ram32(&inter->ram, cur_addr);
+          uint32_t source_word = load_ram(&inter->ram, cur_addr, AddrWord);
           switch (port) {
             case DmaGpu:
               gpu_gp0(&inter->gpu, source_word);
@@ -405,7 +309,7 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
 
           LOG_OUTPUT(inter->output_log_index, "DMA BLOCK COPY: Addr: %08x, Data: %08x", cur_addr.data, source_word);
           print_output_log(inter->output_log_index);
-          store_ram32(&inter->ram, cur_addr, source_word);
+          store_ram(&inter->ram, cur_addr, source_word, AddrWord);
         }
     }
 
@@ -425,7 +329,7 @@ void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
     fatal("Attempted LinkedList DMA on port: 0x%08X", port);
 
   while (1) {
-    uint32_t header = load_ram32(&inter->ram, addr);
+    uint32_t header = load_ram(&inter->ram, addr, AddrWord);
     uint32_t transfer_size = header >> 24;
 
     LOG_OUTPUT(inter->output_log_index, "DMA Linked List. Port: %x, Control: %08x, Dest: GPU, Addr: %08x, Size: %08x, Header: %08X", port, get_dma_channel_control(channel), addr.data, transfer_size, header);
@@ -434,7 +338,7 @@ void perform_dma_linked_list(Interconnect *inter, DmaPort port) {
     while (transfer_size > 0) {
       addr = MAKE_Addr((addr.data + 4) & 0x001FFFFC);
 
-      uint32_t command = load_ram32(&inter->ram, addr);
+      uint32_t command = load_ram(&inter->ram, addr, AddrWord);
 
       gpu_gp0(&inter->gpu, command);
 

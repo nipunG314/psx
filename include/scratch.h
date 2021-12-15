@@ -10,12 +10,8 @@ typedef struct Scratchpad {
 } Scratchpad;
 
 Scratchpad init_scratchpad();
-uint32_t load_scratchpad32(Scratchpad *scratchpad, Addr offset);
-uint16_t load_scratchpad16(Scratchpad *scratchpad, Addr offset);
-uint8_t load_scratchpad8(Scratchpad *Ram, Addr offset);
-void store_scratchpad32(Scratchpad *scratchpad, Addr offset, uint32_t val);
-void store_scratchpad16(Scratchpad *scratchpad, Addr offset, uint16_t val);
-void store_scratchpad8(Scratchpad *scratchpad, Addr offset, uint8_t val);
+uint32_t load_scratchpad(Scratchpad *scratchpad, Addr offset, AddrType type);
+void store_scratchpad(Scratchpad *scratchpad, Addr offset, uint32_t val, AddrType type);
 void destroy_scratchpad(Scratchpad *scratchpad);
 
 #endif

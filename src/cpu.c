@@ -78,30 +78,6 @@ Cpu init_cpu(char const *bios_filename) {
   return cpu;
 }
 
-uint32_t load32(Cpu *cpu, Addr addr) {
-  return load_inter32(&cpu->inter, addr);
-}
-
-uint16_t load16(Cpu *cpu, Addr addr) {
-  return load_inter16(&cpu->inter, addr);
-}
-
-uint8_t load8(Cpu *cpu, Addr addr) {
-  return load_inter8(&cpu->inter, addr);
-}
-
-void store32(Cpu *cpu, Addr addr, uint32_t val) {
-  store_inter32(&cpu->inter, addr, val);
-}
-
-void store16(Cpu *cpu, Addr addr, uint16_t val) {
-  store_inter16(&cpu->inter, addr, val);
-}
-
-void store8(Cpu *cpu, Addr addr, uint8_t val) {
-  store_inter8(&cpu->inter, addr, val);
-}
-
 void set_reg(Cpu *cpu, RegIndex index, uint32_t value) {
   cpu->regs[index.data] = value;
   cpu->regs[0] = 0x0;
@@ -125,7 +101,7 @@ void run_next_ins(Cpu *cpu) {
   }
 
   // Fetch the instruction
-  Ins ins = MAKE_Ins(load32(cpu, cpu->pc));
+  Ins ins = MAKE_Ins(load(&cpu->inter, cpu->pc, AddrWord));
   cpu->current_pc = cpu->pc;
 
   set_pc(cpu->current_pc);
@@ -236,7 +212,7 @@ void op_andi(Cpu *cpu, Ins ins) {
 
 void op_sw(Cpu *cpu, Ins ins) {
   if (cpu->sr & 0x10000) {
-    log_info("Ignoring store32 calls while cache is isolated");
+    log_info("Ignoring store calls while cache is isolated");
     return;
   }
 
@@ -253,7 +229,7 @@ void op_sw(Cpu *cpu, Ins ins) {
     return;
   }
 
-  store32(cpu, addr, reg_t);
+  store(&cpu->inter, addr, reg_t, AddrWord);
 }
 
 void op_sll(Cpu *cpu, Ins ins) {
@@ -510,7 +486,7 @@ void op_bgtz(Cpu *cpu, Ins ins) {
 
 void op_lw(Cpu *cpu, Ins ins) {
   if (cpu->sr & 0x10000) {
-    log_info("Ignoring load32 calls while cache is isolated");
+    log_info("Ignoring load calls while cache is isolated");
     return;
   }
 
@@ -526,12 +502,12 @@ void op_lw(Cpu *cpu, Ins ins) {
     return;
   }
 
-  delayed_load_chain(cpu, rt, load32(cpu, addr));
+  delayed_load_chain(cpu, rt, load(&cpu->inter, addr, AddrWord));
 }
 
 void op_lb(Cpu *cpu, Ins ins) {
   if (cpu->sr & 0x10000) {
-    log_info("Ignoring load8 calls while cache is isolated");
+    log_info("Ignoring load calls while cache is isolated");
     return;
   }
 
@@ -540,13 +516,13 @@ void op_lb(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
 
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
-  int8_t data = load8(cpu, addr);
+  int8_t data = load(&cpu->inter, addr, AddrByte);
   delayed_load_chain(cpu, rt, data);
 }
 
 void op_lbu(Cpu *cpu, Ins ins) {
   if (cpu->sr & 0x10000) {
-    log_info("Ignoring load8 calls while cache is isolated");
+    log_info("Ignoring load calls while cache is isolated");
     return;
   }
 
@@ -555,7 +531,7 @@ void op_lbu(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
 
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
-  uint8_t data = load8(cpu, addr);
+  uint8_t data = load(&cpu->inter, addr, AddrByte);
   delayed_load_chain(cpu, rt, data);
 }
 
@@ -636,7 +612,7 @@ void op_addu(Cpu *cpu, Ins ins) {
 
 void op_sh(Cpu *cpu, Ins ins) {
   if (cpu->sr & 0x10000) {
-    log_info("Ignoring store16 calls while cache is isolated");
+    log_info("Ignoring store calls while cache is isolated");
     return;
   }
 
@@ -656,12 +632,12 @@ void op_sh(Cpu *cpu, Ins ins) {
   LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, NewValue: %08x",
         addr.data, reg_t
   );
-  store16(cpu, addr, reg_t);
+  store(&cpu->inter, addr, reg_t, AddrHalf);
 }
 
 void op_sb(Cpu *cpu, Ins ins) {
   if (cpu->sr & 0x10000) {
-    log_info("Ignoring store16 calls while cache is isolated");
+    log_info("Ignoring store calls while cache is isolated");
     return;
   }
 
@@ -677,7 +653,7 @@ void op_sb(Cpu *cpu, Ins ins) {
   LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, NewValue: %08x",
         addr.data, reg_t
   );
-  store8(cpu, addr, reg_t);
+  store(&cpu->inter, addr, reg_t, AddrByte);
 }
 
 void op_jr(Cpu *cpu, Ins ins) {
@@ -789,7 +765,7 @@ void op_srlv(Cpu *cpu, Ins ins) {
 
 void op_lh(Cpu *cpu, Ins ins) {
   if (cpu->sr & 0x10000) {
-    log_info("Ignoring store16 calls while cache is isolated");
+    log_info("Ignoring store calls while cache is isolated");
     return;
   }
 
@@ -804,14 +780,14 @@ void op_lh(Cpu *cpu, Ins ins) {
     return;
   }
 
-  int16_t val = load16(cpu, addr); 
+  int16_t val = load(&cpu->inter, addr, AddrHalf);
 
   delayed_load_chain(cpu, rt, val);
 }
 
 void op_lhu(Cpu *cpu, Ins ins) {
   if (cpu->sr & 0x10000) {
-    log_info("Ignoring load8 calls while cache is isolated");
+    log_info("Ignoring load calls while cache is isolated");
     return;
   }
 
@@ -827,7 +803,7 @@ void op_lhu(Cpu *cpu, Ins ins) {
     return;
   }
 
-  delayed_load_chain(cpu, rt, load16(cpu, addr));
+  delayed_load_chain(cpu, rt, load(&cpu->inter, addr, AddrHalf));
 }
 
 void op_lwl(Cpu *cpu, Ins ins) {
@@ -843,7 +819,7 @@ void op_lwl(Cpu *cpu, Ins ins) {
     cur_val = cpu->regs[rt.data];
 
   Addr aligned_addr = MAKE_Addr(addr.data & ~3);
-  Ins aligned_ins = MAKE_Ins(load32(cpu, aligned_addr));
+  Ins aligned_ins = MAKE_Ins(load(&cpu->inter, aligned_addr, AddrWord));
 
   uint32_t val;
   switch (addr.data & 3) {
@@ -879,7 +855,7 @@ void op_lwr(Cpu *cpu, Ins ins) {
     cur_val = cpu->regs[rt.data];
 
   Addr aligned_addr = MAKE_Addr(addr.data & ~3);
-  Ins aligned_ins = MAKE_Ins(load32(cpu, aligned_addr));
+  Ins aligned_ins = MAKE_Ins(load(&cpu->inter, aligned_addr, AddrWord));
 
   uint32_t val;
   switch (addr.data & 3) {
@@ -911,7 +887,7 @@ void op_swl(Cpu *cpu, Ins ins) {
   uint32_t val = cpu->regs[rt.data];
 
   Addr aligned_addr = MAKE_Addr(addr.data & ~3);
-  uint32_t cur_val = load32(cpu, aligned_addr);
+  uint32_t cur_val = load(&cpu->inter, aligned_addr, AddrWord);
 
   uint32_t final_val;
   switch (addr.data & 3) {
@@ -933,7 +909,7 @@ void op_swl(Cpu *cpu, Ins ins) {
 
   delayed_load(cpu);
 
-  store32(cpu, aligned_addr, final_val);
+  store(&cpu->inter, aligned_addr, final_val, AddrWord);
 }
 
 void op_swr(Cpu *cpu, Ins ins) {
@@ -945,7 +921,7 @@ void op_swr(Cpu *cpu, Ins ins) {
   uint32_t val = cpu->regs[rt.data];
 
   Addr aligned_addr = MAKE_Addr(addr.data & ~3);
-  uint32_t cur_val = load32(cpu, aligned_addr);
+  uint32_t cur_val = load(&cpu->inter, aligned_addr, AddrWord);
 
   uint32_t final_val;
   switch (addr.data & 3) {
@@ -967,7 +943,7 @@ void op_swr(Cpu *cpu, Ins ins) {
 
   delayed_load(cpu);
 
-  store32(cpu, aligned_addr, final_val);
+  store(&cpu->inter, aligned_addr, final_val, AddrWord);
 }
 void op_mult(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
