@@ -63,6 +63,12 @@ uint32_t load(Interconnect *inter, Addr addr, AddrType type) {
     return 0;
   }
 
+  offset = range_contains(range(PAD_MEMCARD), addr);
+  if (offset >= 0) {
+    log_error("Unhandled read from PAD_MEMCARD. addr: 0x%08X, type: %d", addr, type);
+    return 0;
+  }
+
   offset = range_contains(range(SCRATCH_PAD), addr);
   if (offset >= 0) {
     return load_scratchpad(&inter->pad, MAKE_Addr(offset), type);
@@ -154,6 +160,12 @@ void store(Interconnect *inter, Addr addr, uint32_t val, AddrType type) {
   offset = range_contains(range(SPU), addr);
   if (offset >= 0) {
     log_error("Unhandled Write to SPU registers. addr: 0x%08X. val: 0x%08X, type: %d", addr, val, type);
+    return;
+  }
+
+  offset = range_contains(range(PAD_MEMCARD), addr);
+  if (offset >= 0) {
+    log_error("Unhandled Write to PAD_MEMCARD registers. addr: 0x%08X. val: 0x%08X, type: %d", addr, val, type);
     return;
   }
 
