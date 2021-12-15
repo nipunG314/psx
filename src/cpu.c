@@ -1056,27 +1056,6 @@ void op_break(Cpu *cpu, Ins ins) {
 
 void decode_and_execute(Cpu *cpu, Ins ins) {
   switch (get_func(ins)) {
-    case 0xF:
-      op_lui(cpu, ins);
-      break;
-    case 0xA:
-      op_slti(cpu, ins);
-      break;
-    case 0xB:
-      op_sltiu(cpu, ins);
-      break;
-    case 0xC:
-      op_andi(cpu, ins);
-      break;
-    case 0xD:
-      op_ori(cpu, ins);
-      break;
-    case 0xE:
-      op_xori(cpu, ins);
-      break;
-    case 0x2B:
-      op_sw(cpu, ins);
-      break;
     case 0x0:
       switch (get_sub_func(ins)) {
         case 0x0:
@@ -1096,6 +1075,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
           break;
         case 0x7:
           op_srav(cpu, ins);
+          break;
+        case 0x8:
+          op_jr(cpu, ins);
           break;
         case 0x9:
           op_jalr(cpu, ins);
@@ -1130,6 +1112,9 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
         case 0x1B:
           op_divu(cpu, ins);
           break;
+        case 0x20:
+          op_add(cpu, ins);
+          break;
         case 0x21:
           op_addu(cpu, ins);
           break;
@@ -1139,7 +1124,7 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
         case 0x23:
           op_subu(cpu, ins);
           break;
-       case 0x24:
+        case 0x24:
           op_and(cpu, ins);
           break;
         case 0x25:
@@ -1157,21 +1142,54 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
         case 0x2B:
           op_sltu(cpu, ins);
           break;
-        case 0x20:
-          op_add(cpu, ins);
-          break;
-        case 0x8:
-          op_jr(cpu, ins);
-          break;
         default:
           exception(cpu, IllegalInstruction);
       }
       break;
-    case 0x9:
-      op_addiu(cpu, ins);
+    case 0x1:
+      op_bxx(cpu, ins);
       break;
     case 0x2:
       op_j(cpu, ins);
+      break;
+    case 0x3:
+      op_jal(cpu, ins);
+      break;
+   case 0x4:
+      op_beq(cpu, ins);
+      break;
+    case 0x5:
+      op_bne(cpu, ins);
+      break;
+    case 0x6:
+      op_blez(cpu, ins);
+      break;
+    case 0x7:
+      op_bgtz(cpu, ins);
+      break;
+    case 0x8:
+      op_addi(cpu, ins);
+      break;
+    case 0x9:
+      op_addiu(cpu, ins);
+      break;
+    case 0xA:
+      op_slti(cpu, ins);
+      break;
+    case 0xB:
+      op_sltiu(cpu, ins);
+      break;
+    case 0xC:
+      op_andi(cpu, ins);
+      break;
+    case 0xD:
+      op_ori(cpu, ins);
+      break;
+    case 0xE:
+      op_xori(cpu, ins);
+      break;
+    case 0xF:
+      op_lui(cpu, ins);
       break;
     case 0x10:
       switch (get_cop_func(ins)) {
@@ -1195,25 +1213,7 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
     case 0x12:
       fatal("GTEError: Unhandled GTE instruction: 0x%08X", ins);
       break;
-    case 0x1:
-      op_bxx(cpu, ins);
-      break;
-    case 0x4:
-      op_beq(cpu, ins);
-      break;
-    case 0x5:
-      op_bne(cpu, ins);
-      break;
-    case 0x6:
-      op_blez(cpu, ins);
-      break;
-    case 0x7:
-      op_bgtz(cpu, ins);
-      break;
-    case 0x8:
-      op_addi(cpu, ins);
-      break;
-    case 0x20:
+   case 0x20:
       op_lb(cpu, ins);
       break;
     case 0x21:
@@ -1234,20 +1234,20 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
     case 0x26:
       op_lwr(cpu, ins);
       break;
-    case 0x29:
-      op_sh(cpu, ins);
-      break;
     case 0x28:
       op_sb(cpu, ins);
+      break;
+    case 0x29:
+      op_sh(cpu, ins);
       break;
     case 0x2A:
       op_swl(cpu, ins);
       break;
+    case 0x2B:
+      op_sw(cpu, ins);
+      break;
     case 0x2E:
       op_swr(cpu, ins);
-      break;
-    case 0x3:
-      op_jal(cpu, ins);
       break;
     case 0x30:
     case 0x31:
