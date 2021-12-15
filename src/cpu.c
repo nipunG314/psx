@@ -1054,6 +1054,67 @@ void op_break(Cpu *cpu, Ins ins) {
   exception(cpu, Break);
 }
 
+void op_mfc2(Cpu *cpu, Ins ins) {
+  log_error("STUB: op_mfc2 unimplemented!");
+}
+
+void op_cfc2(Cpu *cpu, Ins ins) {
+  log_error("STUB: op_cfc2 unimplemented!");
+}
+
+void op_mtc2(Cpu *cpu, Ins ins) {
+  log_error("STUB: op_mtc2 unimplemented!");
+}
+
+void op_ctc2(Cpu *cpu, Ins ins) {
+  log_error("STUB: op_ctc2 unimplemented!");
+}
+
+void op_cop0(Cpu *cpu, Ins ins) {
+  switch (get_cop_func(ins)) {
+    case 0x0:
+      op_mfc0(cpu, ins);
+      break;
+    case 0x4:
+      op_mtc0(cpu, ins);
+      break;
+    case 0x10:
+      op_rfe(cpu, ins);
+      break;
+    default:
+      exception(cpu, IllegalInstruction);
+  }
+}
+
+void op_cop2(Cpu *cpu, Ins ins) {
+  // ToDo: Check if GTE is enabled in cop0's
+  // status register. Futhermore, we need to
+  // wait two cycles after raising the flag in
+  // the status register before GTE can be accessed.
+  uint32_t opcode = get_cop_func(ins);
+
+  if (opcode & 0x10) {
+    fatal("GTE Command Unhandled! Ins: 0x%08X, Opcode: 0x%08X", ins, opcode);
+  } else {
+    switch(opcode) {
+      case 0x0:
+        op_mfc2(cpu, ins);
+        break;
+      case 0x2:
+        op_cfc2(cpu, ins);
+        break;
+      case 0x4:
+        op_mtc2(cpu, ins);
+        break;
+      case 0x6:
+        op_ctc2(cpu, ins);
+        break;
+      default:
+        exception(cpu, IllegalInstruction);
+    }
+  }
+}
+
 void decode_and_execute(Cpu *cpu, Ins ins) {
   switch (get_func(ins)) {
     case 0x0:
@@ -1192,26 +1253,14 @@ void decode_and_execute(Cpu *cpu, Ins ins) {
       op_lui(cpu, ins);
       break;
     case 0x10:
-      switch (get_cop_func(ins)) {
-        case 0x0:
-          op_mfc0(cpu, ins);
-          break;
-        case 0x4:
-          op_mtc0(cpu, ins);
-          break;
-        case 0x10:
-          op_rfe(cpu, ins);
-          break;
-        default:
-          exception(cpu, IllegalInstruction);
-      }
+      op_cop0(cpu, ins);
       break;
     case 0x11:
     case 0x13:
       exception(cpu, CoprocessorError);
       break;
     case 0x12:
-      fatal("GTEError: Unhandled GTE instruction: 0x%08X", ins);
+      op_cop2(cpu, ins);
       break;
    case 0x20:
       op_lb(cpu, ins);
