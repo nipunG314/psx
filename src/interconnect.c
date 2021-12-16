@@ -312,6 +312,7 @@ void perform_dma_block(Interconnect *inter, DmaPort port) {
           switch (port) {
             case DmaGpu:
               log_error("Unhandled DMA_GPU Port. port: 0x%08X", port);
+              break;
             case DmaOtc:
               source_word = (transfer_size == 1) ? 0x00FFFFFF : ((addr.data - 4) & 0x001FFFFF);
               break;
