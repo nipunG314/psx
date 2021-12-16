@@ -84,7 +84,8 @@ static inline void push_command(GpuCommandBuffer *command_buffer, uint32_t comma
 
 typedef enum GP0Mode {
   Gp0CommandMode,
-  Gp0ImageLoadMode
+  Gp0ImageLoadMode,
+  Gp0ImageStoreMode
 } GP0Mode;
 
 typedef int32_t Vec2[2];
@@ -185,16 +186,16 @@ static inline uint16_t *get_vram(GpuRenderer *renderer, uint16_t x, uint16_t y) 
 
 void destroy_renderer(GpuRenderer *renderer);
 
-typedef struct GpuImageLoadBuffer {
+typedef struct GpuImageBuffer {
   uint16_t left;
   uint16_t top;
   uint16_t width;
   uint16_t height;
   uint16_t x;
   uint16_t y;
-} GpuImageLoadBuffer;
+} GpuImageBuffer;
 
-static inline void push_image_word(GpuImageLoadBuffer *buffer, GpuRenderer *renderer, uint32_t image_word) {
+static inline void push_image_word(GpuImageBuffer *buffer, GpuRenderer *renderer, uint32_t image_word) {
   uint16_t *target = get_vram(renderer, buffer->x, buffer->y);
   *target = image_word;
 
@@ -212,6 +213,28 @@ static inline void push_image_word(GpuImageLoadBuffer *buffer, GpuRenderer *rend
     buffer->x = buffer->left;
     buffer->y++;
   }
+}
+
+static inline void pop_image_word(GpuImageBuffer *buffer, GpuRenderer *renderer, uint32_t *store) {
+  uint16_t *target = get_vram(renderer, buffer->x, buffer->y);
+  uint32_t w1 = *target;
+
+  buffer->x++;
+  if (buffer->x == buffer->left + buffer->width) {
+    buffer->x = buffer->left;
+    buffer->y++;
+  }
+
+  target = get_vram(renderer, buffer->x, buffer->y);
+  uint32_t w2 = *target;
+
+  buffer->x++;
+  if (buffer->x == buffer->left + buffer->width) {
+    buffer->x = buffer->left;
+    buffer->y++;
+  }
+
+  *store = w1 | (w2 << 16);
 }
 
 static inline float edge_func(Vec2 a, Vec2 b, Vec2 c) {
@@ -263,7 +286,7 @@ typedef struct Gpu {
   uint32_t gp0_words_remaining;
   GP0Method gp0_method;
   GP0Mode gp0_mode;
-  GpuImageLoadBuffer image_load_buffer;
+  GpuImageBuffer image_buffer;
   GpuRenderer renderer;
   uint32_t read_word;
   size_t output_log_index;

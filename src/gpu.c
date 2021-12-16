@@ -86,12 +86,12 @@ Gpu init_gpu() {
   gpu.gp0_words_remaining = 0;
   gpu.gp0_method = gp0_nop;
   gpu.gp0_mode = Gp0CommandMode;
-  gpu.image_load_buffer.left = 0;
-  gpu.image_load_buffer.top = 0;
-  gpu.image_load_buffer.width = 0;
-  gpu.image_load_buffer.height = 0;
-  gpu.image_load_buffer.x = 0;
-  gpu.image_load_buffer.y = 0;
+  gpu.image_buffer.left = 0;
+  gpu.image_buffer.top = 0;
+  gpu.image_buffer.width = 0;
+  gpu.image_buffer.height = 0;
+  gpu.image_buffer.x = 0;
+  gpu.image_buffer.y = 0;
   gpu.renderer = init_renderer();
   gpu.read_word = 0;
   gpu.output_log_index = init_output_log();
@@ -149,6 +149,13 @@ uint32_t gpu_status(Gpu *gpu) {
 }
 
 uint32_t gpu_read(Gpu *gpu) {
+  if (gpu->gp0_mode == Gp0ImageStoreMode) {
+    pop_image_word(&gpu->image_buffer, &gpu->renderer, &gpu->read_word);
+    if (gpu->gp0_words_remaining == 0) {
+      gpu->gp0_mode = Gp0CommandMode;
+    }
+  }
+
   return gpu->read_word;
 }
 
@@ -399,13 +406,13 @@ void gp0_image_load(Gpu *gpu, uint32_t val) {
   size = (size + 1) & ~1;
 
   if (size > 0) {
-    gpu->image_load_buffer.left = gpu->gp0_command_buffer.commands[1];
-    gpu->image_load_buffer.top = gpu->gp0_command_buffer.commands[1] >> 16;
-    gpu->image_load_buffer.width = width;
-    gpu->image_load_buffer.height = height;
+    gpu->image_buffer.left = gpu->gp0_command_buffer.commands[1];
+    gpu->image_buffer.top = gpu->gp0_command_buffer.commands[1] >> 16;
+    gpu->image_buffer.width = width;
+    gpu->image_buffer.height = height;
     gpu->gp0_words_remaining = size / 2;
-    gpu->image_load_buffer.x = gpu->image_load_buffer.left;
-    gpu->image_load_buffer.y = gpu->image_load_buffer.top;
+    gpu->image_buffer.x = gpu->image_buffer.left;
+    gpu->image_buffer.y = gpu->image_buffer.top;
   } else {
     log_error("GPU: 0-Sized Image Load");
   }
@@ -417,7 +424,22 @@ void gp0_image_store(Gpu *gpu, uint32_t val) {
   uint32_t width = gpu->gp0_command_buffer.commands[2] & 0xFFFF;
   uint32_t height = gpu->gp0_command_buffer.commands[2] >> 16;
 
-  log_error("Unhandled GP0_IMAGE_STORE. Width: %x, Height: %x", width, height);
+  uint32_t size = width * height;
+  size = (size + 1) & ~1;
+
+  if (size > 0) {
+    gpu->image_buffer.left = gpu->gp0_command_buffer.commands[1];
+    gpu->image_buffer.top = gpu->gp0_command_buffer.commands[1] >> 16;
+    gpu->image_buffer.width = width;
+    gpu->image_buffer.height = height;
+    gpu->gp0_words_remaining = size / 2;
+    gpu->image_buffer.x = gpu->image_buffer.left;
+    gpu->image_buffer.y = gpu->image_buffer.top;
+  } else {
+    log_error("GPU: 0-Sized Image Load");
+  }
+
+  gpu->gp0_mode = Gp0ImageStoreMode;
 }
 
 void gpu_gp0(Gpu *gpu, uint32_t val) {
@@ -475,6 +497,7 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
       case 0xC0:
         gpu->gp0_method = gp0_image_store;
         gpu->gp0_words_remaining = 3;
+        break;
       case 0xE1:
         gpu->gp0_method = gp0_draw_mode;
         gpu->gp0_words_remaining = 1;
@@ -525,7 +548,7 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
         gpu->gp0_method(gpu, val);
       break;
     case Gp0ImageLoadMode:
-      push_image_word(&gpu->image_load_buffer, &gpu->renderer, val);
+      push_image_word(&gpu->image_buffer, &gpu->renderer, val);
       if (gpu->gp0_words_remaining == 0) {
         gpu->gp0_mode = Gp0CommandMode;
       }
