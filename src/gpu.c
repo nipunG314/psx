@@ -460,6 +460,7 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
       case 0x02:
         gpu->gp0_method = gp0_fill_rect;
         gpu->gp0_words_remaining = 3;
+        break;
       case 0x28:
         gpu->gp0_method = gp0_monochrome_quad;
         gpu->gp0_words_remaining = 5;
@@ -490,6 +491,7 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
       case 0x68:
         gpu->gp0_method = gp0_monochrome_rect_1x1;
         gpu->gp0_words_remaining = 2;
+        break;
       case 0xA0:
         gpu->gp0_method = gp0_image_load;
         gpu->gp0_words_remaining = 3;
