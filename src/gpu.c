@@ -295,8 +295,8 @@ void gp0_texture_quad(Gpu *gpu, uint32_t val) {
   GpuRenderer *renderer = &gpu->renderer;
   renderer->render_mode = GpuRenderTri;
 
-  set_clut(gpu, command_buffer->commands[2] >> 16);
-  set_texture_params(gpu, command_buffer->commands[4] >> 16);
+  set_clut(gpu, command_buffer->commands[2]);
+  set_texture_params(gpu, command_buffer->commands[4]);
 
   pos_from_gp0(command_buffer->commands[1], renderer->tri_pos[0]);
   pos_from_gp0(command_buffer->commands[3], renderer->tri_pos[1]);
@@ -374,7 +374,7 @@ void gp0_texture_rect(Gpu *gpu, uint32_t val) {
   GpuRenderer *renderer = &gpu->renderer;
   renderer->render_mode = GpuRenderRect;
 
-  set_clut(gpu, command_buffer->commands[2] >> 16);
+  set_clut(gpu, command_buffer->commands[2]);
 
   pos_from_gp0(command_buffer->commands[1], renderer->rect_pos);
   pos_from_gp0(command_buffer->commands[3], renderer->rect_size);

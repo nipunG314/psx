@@ -292,16 +292,18 @@ typedef struct Gpu {
   size_t output_log_index;
 } Gpu;
 
-static inline void set_clut(Gpu *gpu, uint16_t val) {
-  gpu->clut[0] = (val & 0x3F) << 4;
-  gpu->clut[1] = (val >> 6) & 0x1FF;
+static inline void set_clut(Gpu *gpu, uint32_t val) {
+  uint16_t clut = val >> 16;
+  gpu->clut[0] = (clut & 0x3F) << 4;
+  gpu->clut[1] = (clut >> 6) & 0x1FF;
 }
 
-static inline void set_texture_params(Gpu *gpu, uint16_t val) {
-  gpu->texture_page[0] = (val & 0xF) << 6;
-  gpu->texture_page[1] = ((val >> 4) & 1) << 8;
-  gpu->semi_transparency_mode = (val >> 5) & 3;
-  gpu->texture_depth = (val >> 7) & 3;
+static inline void set_texture_params(Gpu *gpu, uint32_t val) {
+  uint16_t tex = val >> 16;
+  gpu->texture_page[0] = (tex & 0xF) << 6;
+  gpu->texture_page[1] = ((tex >> 4) & 1) << 8;
+  gpu->semi_transparency_mode = (tex >> 5) & 3;
+  gpu->texture_depth = (tex >> 7) & 3;
   if (gpu->texture_depth == 3) {
     log_error("Invalid Texture Depth detected!");
     gpu->texture_depth = GpuTexture15Bits;
