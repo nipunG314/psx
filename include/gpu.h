@@ -143,6 +143,10 @@ static inline uint32_t vec_to_888(Vec3 color) {
   return (r << 16) | (g << 8) | b;
 }
 
+static inline uint16_t max(uint16_t a, uint16_t b) {
+  return (a > b) ? a : b;
+}
+
 static inline uint16_t min(uint16_t a, uint16_t b) {
   return (a > b) ? b : a;
 }

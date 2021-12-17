@@ -754,8 +754,13 @@ void gpu_draw_tri(Gpu *gpu) {
     area *= -1;
   }
 
-  for(uint16_t i = gpu->drawing_area_left; i <= gpu->drawing_area_right; i++) {
-    for(uint16_t j = gpu->drawing_area_top; j <= gpu->drawing_area_bottom; j++) {
+  uint16_t bound_x_min = max(gpu->drawing_area_left, min(min(renderer->tri_pos[0][0], renderer->tri_pos[1][0]), renderer->tri_pos[2][0]));
+  uint16_t bound_x_max = min(gpu->drawing_area_right, max(max(renderer->tri_pos[0][0], renderer->tri_pos[1][0]), renderer->tri_pos[2][0]));
+  uint16_t bound_y_min = max(gpu->drawing_area_top, min(min(renderer->tri_pos[0][1], renderer->tri_pos[1][1]), renderer->tri_pos[2][1]));
+  uint16_t bound_y_max = min(gpu->drawing_area_bottom, max(max(renderer->tri_pos[0][1], renderer->tri_pos[1][1]), renderer->tri_pos[2][1]));
+
+  for(uint16_t i = bound_x_min; i <= bound_x_max; i++) {
+    for(uint16_t j = bound_y_min; j <= bound_y_max; j++) {
       Vec2 p = {i + 0.5f, j + 0.5f};
       float w0 = edge_func(renderer->tri_pos[1], renderer->tri_pos[2], p);
       float w1 = edge_func(renderer->tri_pos[2], renderer->tri_pos[0], p);
