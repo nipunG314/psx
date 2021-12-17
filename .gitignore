@@ -3,5 +3,6 @@ psx_test
 *.swp
 *.BIN
 *.exe
+*.py
 jac_tests/
 compile_commands.json
