@@ -555,6 +555,8 @@ void gpu_gp0(Gpu *gpu, uint32_t val) {
         gpu->gp0_mode = Gp0CommandMode;
       }
       break;
+    default:
+      break;
   }
 }
 
@@ -780,32 +782,12 @@ void gpu_draw_tri(Gpu *gpu) {
             *target = vec_to_555(shaded_color);
             break;
           case GpuBlendedTexture:
-            switch (gpu->texture_depth) {
-              case GpuTexture4Bits:
-                new_color = multiply_888_555(vec_to_888(shaded_color), get_texel_4bit(gpu, interop_tex[0], interop_tex[1]));
-                break;
-              case GpuTexture8Bits:
-                new_color = multiply_888_555(vec_to_888(shaded_color), get_texel_8bit(gpu, interop_tex[0], interop_tex[1]));
-                break;
-              case GpuTexture15Bits:
-                new_color = multiply_888_555(vec_to_888(shaded_color), get_texel_15bit(gpu, interop_tex[0], interop_tex[1]));
-                break;
-            }
+            new_color = multiply_888_555(vec_to_888(shaded_color), get_texel(gpu, interop_tex[0], interop_tex[1], gpu->texture_depth));
             if (new_color)
               *target = new_color;
             break;
           case GpuRawTexture:
-            switch (gpu->texture_depth) {
-              case GpuTexture4Bits:
-                new_color = get_texel_4bit(gpu, interop_tex[0], interop_tex[1]);
-                break;
-              case GpuTexture8Bits:
-                new_color = get_texel_8bit(gpu, interop_tex[0], interop_tex[1]);
-                break;
-              case GpuTexture15Bits:
-                new_color = get_texel_15bit(gpu, interop_tex[0], interop_tex[1]);
-                break;
-            }
+            new_color = get_texel(gpu, interop_tex[0], interop_tex[1], gpu->texture_depth);
             if (new_color)
               *target = new_color;
             break;
@@ -836,17 +818,7 @@ void gpu_draw_rect(Gpu *gpu) {
       if (gpu->blend_mode == GpuNoTexture)
         *target = vec_to_555(renderer->rect_color);
       else {
-        switch (gpu->texture_depth) {
-          case GpuTexture4Bits:
-            new_color = get_texel_4bit(gpu, interop_tex[0], interop_tex[1]);
-            break;
-          case GpuTexture8Bits:
-            new_color = get_texel_8bit(gpu, interop_tex[0], interop_tex[1]);
-            break;
-          case GpuTexture15Bits:
-            new_color = get_texel_15bit(gpu, interop_tex[0], interop_tex[1]);
-            break;
-        }
+        new_color = get_texel(gpu, interop_tex[0], interop_tex[1], gpu->texture_depth);
         if (new_color)
           *target = new_color;
       }

@@ -308,20 +308,45 @@ static inline void set_texture_params(Gpu *gpu, uint16_t val) {
   }
 }
 
-static inline uint16_t get_texel_4bit(Gpu *gpu, uint16_t x, uint16_t y) {
-  uint16_t texel = *get_vram(&gpu->renderer, gpu->texture_page[0] + x/4, gpu->texture_page[1] + y);
-  uint16_t index = (texel >> (x % 4) * 4) & 0xF;
-  return *get_vram(&gpu->renderer, gpu->clut[0] + index, gpu->clut[1]);
+static inline uint16_t bgr_to_rgb(uint16_t bgr) {
+  uint16_t red = bgr & 0x1F;
+  uint16_t green = (bgr >> 5) & 0x1F;
+  uint16_t blue = (bgr >> 10) & 0x1F;
+
+  return blue | (green << 5) | (red << 10) | (bgr & (1 << 15));
 }
 
-static inline uint16_t get_texel_8bit(Gpu *gpu, uint16_t x, uint16_t y) {
-  uint16_t texel = *get_vram(&gpu->renderer, gpu->texture_page[0] + x/2, gpu->texture_page[1] + y);
-  uint16_t index = (texel >> (x % 2) * 8) & 0xFF;
-  return *get_vram(&gpu->renderer, gpu->clut[0] + index, gpu->clut[1]);
-}
+static inline uint16_t get_texel(Gpu *gpu, uint16_t x, uint16_t y, GpuTextureDepth depth) {
+  uint16_t add;
+  switch (depth) {
+    case GpuTexture4Bits:
+      add = x/4;
+      break;
+    case GpuTexture8Bits:
+      add = x/2;
+      break;
+    case GpuTexture15Bits:
+      add = x;
+      break;
+  }
+  uint16_t texel = *get_vram(&gpu->renderer, gpu->texture_page[0] + add, gpu->texture_page[1] + y);
 
-static inline uint16_t get_texel_15bit(Gpu *gpu, uint16_t x, uint16_t y) {
-  return *get_vram(&gpu->renderer, gpu->texture_page[0] + x, gpu->texture_page[1] + y);
+  if (depth == GpuTexture15Bits)
+    return bgr_to_rgb(texel);
+
+  uint16_t index;
+  switch (depth) {
+    case GpuTexture4Bits:
+      index = (texel >> (x % 4) * 4) & 0xF;
+      break;
+    case GpuTexture8Bits:
+      index = (texel >> (x % 2) * 8) & 0xFF;
+      break;
+    default:
+      break;
+  }
+
+  return bgr_to_rgb(*get_vram(&gpu->renderer, gpu->clut[0] + index, gpu->clut[1]));
 }
 
 Gpu init_gpu();

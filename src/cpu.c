@@ -229,6 +229,8 @@ void op_sw(Cpu *cpu, Ins ins) {
     return;
   }
 
+  LOG_OUTPUT(cpu->output_log_index, " Addr: 0x%08X, Value: 0x%08X", addr.data, reg_t);
+
   store(&cpu->inter, addr, reg_t, AddrWord);
 }
 
