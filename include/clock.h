@@ -7,6 +7,28 @@
 #define CLOCK_H
 
 DECLARE_TYPE(uint64_t, Cycles)
+DECLARE_TYPE(uint64_t, FracCycles)
+
+#define FRAC_BITS_COUNT 16
+
+static inline FracCycles add_frac_cycles(FracCycles f1, FracCycles f2) {
+  return MAKE_FracCycles(f1.data + f2.data);
+}
+
+static inline FracCycles multiply_frac_cycles(FracCycles f1, FracCycles f2) {
+  uint64_t mult = f1.data * f2.data;
+  return MAKE_FracCycles(mult >> FRAC_BITS_COUNT);
+}
+
+static inline FracCycles divide_frac_cycles(FracCycles f1, FracCycles f2) {
+  uint64_t num = f1.data << FRAC_BITS_COUNT;
+  return MAKE_FracCycles(num / f2.data);
+}
+
+static inline Cycles ceil_frac_cycles(FracCycles f) {
+  uint64_t shift = (1 << FRAC_BITS_COUNT) - 1;
+  return MAKE_Cycles((f.data + shift) >> FRAC_BITS_COUNT);
+}
 
 typedef enum Peripheral {
   Timer0,
