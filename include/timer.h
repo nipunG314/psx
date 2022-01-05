@@ -60,6 +60,17 @@ Timer init_timer(Peripheral peripheral);
 void reconfigure(Timer *timer, SharedState *shared, Gpu *gpu);
 void timer_sync(Timer *timer, SharedState *shared);
 void predict_next_sync(Timer *timer, SharedState *shared);
+uint16_t get_timer_mode(Timer *timer);
+void set_timer_mode(Timer *timer, uint16_t val);
 bool needs_gpu(Timer *timer);
+
+typedef struct Timers {
+  Timer timers[3];
+} Timers;
+
+Timers init_timers();
+uint32_t load_timers(Timers *timers, SharedState *shared, Addr offset, AddrType type);
+void store_timers(Timers *timers, SharedState *shared, Gpu *gpu, Addr offset, uint32_t val, AddrType type);
+void timers_sync(Timers *timers, SharedState *shared);
 
 #endif
