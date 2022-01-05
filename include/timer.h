@@ -24,7 +24,7 @@ typedef enum ClockType {
   GpuHSync
 } ClockType;
 
-ClockType const clock_type_lookup[3][4] = {
+static ClockType const clock_type_lookup[3][4] = {
   // Timer0
   {SysClock, GpuPixelClock, SysClock, GpuPixelClock},
   // Timer1

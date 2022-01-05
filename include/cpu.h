@@ -2,6 +2,7 @@
 #include <stdbool.h>
 
 #include "instruction.h"
+#include "shared.h"
 #include "interconnect.h"
 #include "exception.h"
 
@@ -23,6 +24,7 @@ typedef struct Cpu {
   Interconnect inter;
   bool branch;
   bool delay_slot;
+  SharedState shared;
   size_t output_log_index;
 } Cpu;
 

@@ -13,13 +13,14 @@ Interconnect init_interconnect(char const *bios_filename) {
   inter.ram = init_ram();
   inter.dma = init_dma();
   inter.gpu = init_gpu();
+  inter.timers = init_timers();
   inter.pad = init_scratchpad();
   inter.output_log_index = init_output_log();
 
   return inter;
 }
 
-uint32_t load(Interconnect *inter, Addr addr, AddrType type) {
+uint32_t load(Interconnect *inter, SharedState *shared, Addr addr, AddrType type) {
   addr = mask_region(addr);
 
   int32_t offset = range_contains(range(BIOS), addr);
@@ -53,8 +54,7 @@ uint32_t load(Interconnect *inter, Addr addr, AddrType type) {
 
   offset = range_contains(range(TIMERS), addr);
   if (offset >= 0) {
-    log_error("Unhandled read from TIMERS. addr: 0x%08X, type: %d", addr, type);
-    return 0;
+    return load_timers(&inter->timers, shared, MAKE_Addr(offset), type);
   }
 
   offset = range_contains(range(SPU), addr);
@@ -81,7 +81,7 @@ uint32_t load(Interconnect *inter, Addr addr, AddrType type) {
   fatal("Unhandled load call. Address: 0x%08X, Type: %d", addr, type);
 }
 
-void store(Interconnect *inter, Addr addr, uint32_t val, AddrType type) {
+void store(Interconnect *inter, SharedState *shared, Addr addr, uint32_t val, AddrType type) {
   addr = mask_region(addr);
 
   int32_t offset = range_contains(range(MEM_CONTROL), addr);
@@ -153,7 +153,7 @@ void store(Interconnect *inter, Addr addr, uint32_t val, AddrType type) {
 
   offset = range_contains(range(TIMERS), addr);
   if (offset >= 0) {
-    log_error("Unhandled Write to TIMERS register. addr: 0x%08X. val: 0x%08X, type: %d", addr, val, type);
+    store_timers(&inter->timers, shared, &inter->gpu, MAKE_Addr(offset), val, type);
     return;
   }
 
@@ -378,6 +378,12 @@ void perform_dma(Interconnect *inter, DmaPort port) {
   inter->dma.channels[port].trigger = false;
   inter->dma.channels[port].enable = false;
   // ToDo: Set correct values for other fields (i.e. interrupts)
+}
+
+void interconnect_sync(Interconnect *inter, SharedState *shared) {
+  log_error("GPU Timings unimplemneted!");
+
+  timers_sync(&inter->timers, shared);
 }
 
 void destroy_interconnect(Interconnect *inter) {

@@ -73,6 +73,7 @@ Cpu init_cpu(char const *bios_filename) {
   cpu.inter = init_interconnect(bios_filename);
   cpu.branch = false;
   cpu.delay_slot = false;
+  cpu.shared = init_shared();
   cpu.output_log_index = init_output_log();
 
   return cpu;
@@ -101,7 +102,7 @@ void run_next_ins(Cpu *cpu) {
   }
 
   // Fetch the instruction
-  Ins ins = MAKE_Ins(load(&cpu->inter, cpu->pc, AddrWord));
+  Ins ins = MAKE_Ins(load(&cpu->inter, &cpu->shared, cpu->pc, AddrWord));
   cpu->current_pc = cpu->pc;
 
   set_pc(cpu->current_pc);
@@ -231,7 +232,7 @@ void op_sw(Cpu *cpu, Ins ins) {
 
   LOG_OUTPUT(cpu->output_log_index, " Addr: 0x%08X, Value: 0x%08X", addr.data, reg_t);
 
-  store(&cpu->inter, addr, reg_t, AddrWord);
+  store(&cpu->inter, &cpu->shared, addr, reg_t, AddrWord);
 }
 
 void op_sll(Cpu *cpu, Ins ins) {
@@ -504,7 +505,7 @@ void op_lw(Cpu *cpu, Ins ins) {
     return;
   }
 
-  delayed_load_chain(cpu, rt, load(&cpu->inter, addr, AddrWord));
+  delayed_load_chain(cpu, rt, load(&cpu->inter, &cpu->shared, addr, AddrWord));
 }
 
 void op_lb(Cpu *cpu, Ins ins) {
@@ -518,7 +519,7 @@ void op_lb(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
 
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
-  int8_t data = load(&cpu->inter, addr, AddrByte);
+  int8_t data = load(&cpu->inter, &cpu->shared, addr, AddrByte);
   delayed_load_chain(cpu, rt, data);
 }
 
@@ -533,7 +534,7 @@ void op_lbu(Cpu *cpu, Ins ins) {
   RegIndex rt = get_rt(ins);
 
   Addr addr = MAKE_Addr(cpu->regs[rs.data] + imm_se);
-  uint8_t data = load(&cpu->inter, addr, AddrByte);
+  uint8_t data = load(&cpu->inter, &cpu->shared, addr, AddrByte);
   delayed_load_chain(cpu, rt, data);
 }
 
@@ -634,7 +635,7 @@ void op_sh(Cpu *cpu, Ins ins) {
   LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, NewValue: %08x",
         addr.data, reg_t
   );
-  store(&cpu->inter, addr, reg_t, AddrHalf);
+  store(&cpu->inter, &cpu->shared, addr, reg_t, AddrHalf);
 }
 
 void op_sb(Cpu *cpu, Ins ins) {
@@ -655,7 +656,7 @@ void op_sb(Cpu *cpu, Ins ins) {
   LOG_OUTPUT(cpu->output_log_index, " Addr: %08x, NewValue: %08x",
         addr.data, reg_t
   );
-  store(&cpu->inter, addr, reg_t, AddrByte);
+  store(&cpu->inter, &cpu->shared, addr, reg_t, AddrByte);
 }
 
 void op_jr(Cpu *cpu, Ins ins) {
@@ -782,7 +783,7 @@ void op_lh(Cpu *cpu, Ins ins) {
     return;
   }
 
-  int16_t val = load(&cpu->inter, addr, AddrHalf);
+  int16_t val = load(&cpu->inter, &cpu->shared, addr, AddrHalf);
 
   delayed_load_chain(cpu, rt, val);
 }
@@ -805,7 +806,7 @@ void op_lhu(Cpu *cpu, Ins ins) {
     return;
   }
 
-  delayed_load_chain(cpu, rt, load(&cpu->inter, addr, AddrHalf));
+  delayed_load_chain(cpu, rt, load(&cpu->inter, &cpu->shared, addr, AddrHalf));
 }
 
 void op_lwl(Cpu *cpu, Ins ins) {
@@ -821,7 +822,7 @@ void op_lwl(Cpu *cpu, Ins ins) {
     cur_val = cpu->regs[rt.data];
 
   Addr aligned_addr = MAKE_Addr(addr.data & ~3);
-  Ins aligned_ins = MAKE_Ins(load(&cpu->inter, aligned_addr, AddrWord));
+  Ins aligned_ins = MAKE_Ins(load(&cpu->inter, &cpu->shared, aligned_addr, AddrWord));
 
   uint32_t val;
   switch (addr.data & 3) {
@@ -857,7 +858,7 @@ void op_lwr(Cpu *cpu, Ins ins) {
     cur_val = cpu->regs[rt.data];
 
   Addr aligned_addr = MAKE_Addr(addr.data & ~3);
-  Ins aligned_ins = MAKE_Ins(load(&cpu->inter, aligned_addr, AddrWord));
+  Ins aligned_ins = MAKE_Ins(load(&cpu->inter, &cpu->shared, aligned_addr, AddrWord));
 
   uint32_t val;
   switch (addr.data & 3) {
@@ -889,7 +890,7 @@ void op_swl(Cpu *cpu, Ins ins) {
   uint32_t val = cpu->regs[rt.data];
 
   Addr aligned_addr = MAKE_Addr(addr.data & ~3);
-  uint32_t cur_val = load(&cpu->inter, aligned_addr, AddrWord);
+  uint32_t cur_val = load(&cpu->inter, &cpu->shared, aligned_addr, AddrWord);
 
   uint32_t final_val;
   switch (addr.data & 3) {
@@ -911,7 +912,7 @@ void op_swl(Cpu *cpu, Ins ins) {
 
   delayed_load(cpu);
 
-  store(&cpu->inter, aligned_addr, final_val, AddrWord);
+  store(&cpu->inter, &cpu->shared, aligned_addr, final_val, AddrWord);
 }
 
 void op_swr(Cpu *cpu, Ins ins) {
@@ -923,7 +924,7 @@ void op_swr(Cpu *cpu, Ins ins) {
   uint32_t val = cpu->regs[rt.data];
 
   Addr aligned_addr = MAKE_Addr(addr.data & ~3);
-  uint32_t cur_val = load(&cpu->inter, aligned_addr, AddrWord);
+  uint32_t cur_val = load(&cpu->inter, &cpu->shared, aligned_addr, AddrWord);
 
   uint32_t final_val;
   switch (addr.data & 3) {
@@ -945,7 +946,7 @@ void op_swr(Cpu *cpu, Ins ins) {
 
   delayed_load(cpu);
 
-  store(&cpu->inter, aligned_addr, final_val, AddrWord);
+  store(&cpu->inter, &cpu->shared, aligned_addr, final_val, AddrWord);
 }
 void op_mult(Cpu *cpu, Ins ins) {
   RegIndex rs = get_rs(ins);
