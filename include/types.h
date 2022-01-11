@@ -15,12 +15,12 @@ DECLARE_TYPE(uint32_t, Addr)
 DECLARE_TYPE(int32_t, Cycles)
 
 typedef enum AddrType {
-  AddrByte,
-  AddrHalf,
-  AddrWord
+  AddrByte = 1,
+  AddrHalf = 2,
+  AddrWord = 4
 } AddrType;
 
-uint32_t const AddrRegionMask[] = {
+static uint32_t const AddrRegionMask[] = {
   // KUSEG - 2GB
   0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
   // KSEG0 - 512MB
@@ -60,7 +60,7 @@ typedef struct Range {
   uint32_t size;
 } Range;
 
-Range const ranges[RANGE_COUNT] = {
+static Range const ranges[RANGE_COUNT] = {
   [BIOS] = {0x1FC00000, 512 * 1024},
   [MEM_CONTROL] = {0x1F801000, 36},
   [RAM_SIZE] = {0x1F801060, 4},
@@ -77,7 +77,7 @@ Range const ranges[RANGE_COUNT] = {
   [PAD_MEMCARD] = {0x1F801040, 32}
 };
 
-inline Range range(RangeIndex index) {
+static inline Range range(RangeIndex index) {
   return ranges[index];
 }
 
