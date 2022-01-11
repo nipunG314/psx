@@ -1,14 +1,41 @@
 #include <stdint.h>
 
-#include "instruction.h"
+#ifndef TYPES_H
+#define TYPES_H
 
-#ifndef RANGE_H
-#define RANGE_H
+#define DECLARE_TYPE(T, N) typedef struct N {\
+  T data;\
+} N;\
+static inline N MAKE_##N(T x) {\
+  N val = {x};\
+  return val;\
+}
 
-typedef struct Range {
-  uint32_t start;
-  uint32_t size;
-} Range;
+DECLARE_TYPE(uint32_t, Addr)
+DECLARE_TYPE(int32_t, Cycles)
+
+typedef enum AddrType {
+  AddrByte,
+  AddrHalf,
+  AddrWord
+} AddrType;
+
+uint32_t const AddrRegionMask[] = {
+  // KUSEG - 2GB
+  0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+  // KSEG0 - 512MB
+  0x7FFFFFFF,
+  // KSEG1 - 512MB
+  0x1FFFFFFF,
+  // KSEG2 - 1GB
+  0xFFFFFFFF, 0xFFFFFFFF
+};
+
+static inline Addr mask_region(Addr addr) {
+  uint8_t index = addr.data >> 29;
+
+  return MAKE_Addr(addr.data & AddrRegionMask[index]);
+}
 
 typedef enum RangeIndex {
   BIOS,
@@ -28,7 +55,12 @@ typedef enum RangeIndex {
   RANGE_COUNT
 } RangeIndex;
 
-static Range ranges[RANGE_COUNT] = {
+typedef struct Range {
+  uint32_t start;
+  uint32_t size;
+} Range;
+
+Range const ranges[RANGE_COUNT] = {
   [BIOS] = {0x1FC00000, 512 * 1024},
   [MEM_CONTROL] = {0x1F801000, 36},
   [RAM_SIZE] = {0x1F801060, 4},
@@ -45,7 +77,7 @@ static Range ranges[RANGE_COUNT] = {
   [PAD_MEMCARD] = {0x1F801040, 32}
 };
 
-static inline Range range(RangeIndex index) {
+inline Range range(RangeIndex index) {
   return ranges[index];
 }
 
