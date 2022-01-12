@@ -3,14 +3,31 @@
 #include "types.h"
 #include "bios.h"
 #include "ram.h"
+#include "cpu.h"
+#include "cop0.h"
 
 #ifndef PSX_H
 #define PSX_H
+
+typedef struct RomHeader {
+  Addr initial_pc;
+  uint32_t initial_r28;
+  Addr ram_address;
+  Addr data_start;
+  uint32_t data_size;
+  Addr bss_start;
+  uint32_t bss_size;
+  Addr r29_start;
+  uint32_t r29_size;
+} RomHeader;
+
 typedef struct Psx {
   Cycles cycles_counter;
   Cycles dma_timing_penalty;
   Bios bios; 
   Ram ram;
+  Cpu cpu;
+  Cop0 cop0;
 } Psx;
 
 Psx init_psx(char const *bios_file_path);

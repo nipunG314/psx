@@ -3,6 +3,42 @@
 #include "psx.h"
 #include "log.h"
 
+/*
+void side_load_rom(Cpu *cpu) {
+  FILE * const fp = fopen(get_rom_filename(), "rb");
+
+  if (!fp)
+    fatal("IOError: Could not open ROM: %s", rom_filename);
+
+  RomHeader header;
+
+  fseek(fp, 0x10L, SEEK_SET);
+  if (fread(&header, sizeof(RomHeader), 1, fp) != 1)
+    fatal("IOError: Invalid ROM Header: %s", rom_filename);
+
+  cpu->next_pc = header.initial_pc;
+  cpu->regs[28] = header.initial_r28;
+  header.ram_address = mask_region(header.ram_address);
+
+  fseek(fp, 0x0L, SEEK_END);
+  uint64_t count = ftell(fp) - 1;
+  fseek(fp, 0x800L, SEEK_SET);
+  count -= ftell(fp);
+
+  if (fread(&cpu->inter.ram.data[header.ram_address.data], sizeof(uint8_t), count, fp) != sizeof(uint8_t) * count)
+    fatal("IOError: Couldn't read ROM data: %s", rom_filename);
+
+  memset(&cpu->inter.ram.data[header.data_start.data], 0, header.data_size);
+  memset(&cpu->inter.ram.data[header.bss_start.data], 0, header.bss_size);
+  if (header.r29_start.data) {
+    cpu->regs[29] = header.r29_start.data + header.r29_size;
+    cpu->regs[30] = header.r29_start.data + header.r29_size;
+  }
+
+  fclose(fp);
+}
+*/
+
 Psx init_psx(char const *bios_file_path) {
   Psx psx;
 
@@ -10,6 +46,8 @@ Psx init_psx(char const *bios_file_path) {
   psx.dma_timing_penalty = MAKE_Cycles(0);
   psx.bios = init_bios(bios_file_path); 
   psx.ram = init_ram();
+  psx.cpu = init_cpu();
+  psx.cop0 = init_cop0();
 
   return psx;
 }
@@ -68,7 +106,7 @@ uint32_t load(Psx *psx, Addr addr, AddrType type) {
 
   offset = range_contains(range(EXPANSION1), addr);
   if (offset >= 0)
-    return !0;
+    return ~0;
 
   fatal("Unhandled load call. Address: 0x%08X, Type: %d", addr, type);
 }

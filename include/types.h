@@ -13,6 +13,43 @@ static inline N MAKE_##N(T x) {\
 
 DECLARE_TYPE(uint32_t, Addr)
 DECLARE_TYPE(int32_t, Cycles)
+DECLARE_TYPE(uint32_t, Ins)
+DECLARE_TYPE(uint8_t, RegIndex)
+
+static inline uint32_t get_func(Ins ins) {
+  return ins.data >> 26;
+}
+static inline uint32_t get_sub_func(Ins ins) {
+  return ins.data & 0x3F;
+}
+static inline uint32_t get_cop_func(Ins ins) {
+  return (ins.data >> 21) & 0x1F;
+}
+static inline RegIndex get_rs(Ins ins) {
+  return MAKE_RegIndex((ins.data >> 21) & 0x1F);
+}
+static inline RegIndex get_rt(Ins ins) {
+  return MAKE_RegIndex((ins.data >> 16) & 0x1F);
+}
+static inline RegIndex get_rd(Ins ins) {
+  return MAKE_RegIndex((ins.data >> 11) & 0x1F);
+}
+static inline uint32_t get_shift(Ins ins) {
+  return (ins.data >> 6) & 0x1F; 
+}
+static inline uint32_t get_imm(Ins ins) {
+  return ins.data & 0xFFFF;
+}
+static inline uint32_t get_imm_se(Ins ins) {
+  int16_t tmp = ins.data & 0xFFFF;
+  return tmp;
+}
+static inline uint32_t get_imm_jump(Ins ins) {
+  return ins.data & 0x3FFFFFF;
+}
+static inline uint8_t get_cop_reg(Ins ins) {
+  return get_rd(ins).data;
+}
 
 typedef enum AddrType {
   AddrByte = 1,
