@@ -46,6 +46,7 @@ Psx init_psx(char const *bios_file_path) {
   psx.dma_timing_penalty = MAKE_Cycles(0);
   psx.bios = init_bios(bios_file_path); 
   psx.ram = init_ram();
+  psx.sync = init_synchronizer();
   psx.cpu = init_cpu();
   psx.cop0 = init_cop0();
 

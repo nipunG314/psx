@@ -81,7 +81,7 @@ void handle_irq_changed(Psx *psx) {
   psx->cpu.optable_offset = (irq_pending(psx)) ? 64 : 0;
 }
 
-void rebase_counters(Cpu *cpu, Cycles count) {
+void cpu_rebase_counters(Cpu *cpu, Cycles count) {
   cpu->mult_div_end.data -= count.data;
 }
 

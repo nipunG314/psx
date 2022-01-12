@@ -61,6 +61,6 @@ typedef struct Cpu {
 Cpu init_cpu();
 void run_next_ins(Psx *psx);
 void handle_irq_changed(Psx *psx);
-void rebase_counters(Cpu *cpu, Cycles count);
+void cpu_rebase_counters(Cpu *cpu, Cycles count);
 
 #endif

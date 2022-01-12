@@ -3,6 +3,7 @@
 #include "types.h"
 #include "bios.h"
 #include "ram.h"
+#include "sync.h"
 #include "cpu.h"
 #include "cop0.h"
 
@@ -26,6 +27,7 @@ typedef struct Psx {
   Cycles dma_timing_penalty;
   Bios bios; 
   Ram ram;
+  Synchronizer sync;
   Cpu cpu;
   Cop0 cop0;
 } Psx;

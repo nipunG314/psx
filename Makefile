@@ -8,7 +8,7 @@ TESTS=tests
 
 CC=gcc
 CFLAGS=-I$(INCLUDE) -Wall -pedantic -g
-LDFLAGS=-lSDL2
+LDFLAGS=-lSDL2 -lm
 OBJ_CFLAGS=$(CFLAGS) -MMD
 
 SOURCES:=$(shell find $(SRC) -name '*.c')
