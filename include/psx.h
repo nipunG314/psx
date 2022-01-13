@@ -4,6 +4,7 @@
 #include "bios.h"
 #include "ram.h"
 #include "sync.h"
+#include "irq.h"
 #include "cpu.h"
 #include "cop0.h"
 
@@ -28,6 +29,7 @@ typedef struct Psx {
   Bios bios; 
   Ram ram;
   Synchronizer sync;
+  IrqState irq;
   Cpu cpu;
   Cop0 cop0;
 } Psx;
