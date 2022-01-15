@@ -1,4 +1,7 @@
+#include <stdlib.h>
+
 #include "gpu.h"
+#include "log.h"
 
 Gpu init_gpu() {
   Gpu gpu;
@@ -6,6 +9,34 @@ Gpu init_gpu() {
   gpu.state = init_gpu_state();
 
   return gpu;
+}
+
+uint32_t load_gpu(Gpu *gpu, Addr addr, AddrType type) {
+  if (type != AddrWord)
+    fatal("Unhandled GPU Load: Addr: 0x%08X, Type: 0x%08X", addr.data, type);
+
+  switch (addr.data) {
+    case 0:
+      return gpu_read(&gpu->state);
+    case 4:
+      return gpu_status(&gpu->state);
+  }
+
+  return 0;
+}
+
+void store_gpu(Gpu *gpu, Addr addr, uint32_t val, AddrType type) {
+  if (type != AddrWord)
+    fatal("Unhandled GPU Store: Addr: 0x%08X, Val: 0x%08X, Type: 0x%08X", addr.data, val, type);
+
+  switch (addr.data) {
+    case 0:
+      log_error("GP0 commands unimplemented!");
+      break;
+    case 4:
+      log_error("GP1 commands unimplemented!");
+      break;
+  }
 }
 
 uint32_t gpu_status(GpuState *state) {

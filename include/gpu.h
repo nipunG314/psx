@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "types.h"
+
 #ifndef GPU_H
 #define GPU_H
 
@@ -144,6 +146,9 @@ typedef struct Gpu {
 } Gpu;
 
 Gpu init_gpu();
+
+uint32_t load_gpu(Gpu *gpu, Addr addr, AddrType type);
+void store_gpu(Gpu *gpu, Addr addr, uint32_t val, AddrType type);
 
 uint32_t gpu_status(GpuState *state);
 uint32_t gpu_read(GpuState *state);
