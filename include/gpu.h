@@ -101,7 +101,7 @@ static inline uint16_t get_hres(GpuDisplaySettings *display) {
   return display->hres;
 }
 
-static inline bool get_hres_field(GpuDisplaySettings *display, uint8_t *field) {
+static inline bool get_hres_from_field(GpuDisplaySettings *display, uint8_t *field) {
   if (display->fixed_hres)
     return false;
 
@@ -122,6 +122,23 @@ static inline bool get_hres_field(GpuDisplaySettings *display, uint8_t *field) {
 
   *field = 3;
   return true;
+}
+
+static inline void set_hres_from_field(GpuDisplaySettings *display, uint32_t field) {
+  switch (field & 3) {
+    case 0:
+      display->hres = 256;
+      break;
+    case 1:
+      display->hres = 320;
+      break;
+    case 2:
+      display->hres = 512;
+      break;
+    case 3:
+      display->hres = 640;
+      break;
+  }
 }
 
 static inline bool interlaced_display(GpuDisplaySettings *display) {
@@ -146,6 +163,9 @@ typedef struct Gpu {
 } Gpu;
 
 Gpu init_gpu();
+
+void gp0(Gpu *gpu, uint32_t val);
+void gp1(GpuState *state, uint32_t val);
 
 uint32_t load_gpu(Gpu *gpu, Addr addr, AddrType type);
 void store_gpu(Gpu *gpu, Addr addr, uint32_t val, AddrType type);

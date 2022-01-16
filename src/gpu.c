@@ -11,6 +11,90 @@ Gpu init_gpu() {
   return gpu;
 }
 
+void gp1_get_info(GpuState *state, uint32_t val) {
+  switch (val & 0xF) {
+    case 2: {
+      GpuTexWindow *window = &state->tex_window;
+      uint32_t mask_x = window->mask_x;
+      uint32_t mask_y = window->mask_y;
+      uint32_t offset_x = window->offset_x;
+      uint32_t offset_y = window->offset_y;
+
+      state->read_word = mask_x | (mask_y << 8) | (offset_x << 16) | (offset_y << 24);
+    } break;
+    case 3: {
+      uint32_t top = state->draw_area.top;
+      uint32_t left = state->draw_area.left;
+
+      state->read_word = left | (top << 10);
+    } break;
+    case 4: {
+      uint32_t bottom = state->draw_area.bottom;
+      uint32_t right = state->draw_area.right;
+
+      state->read_word = right | (bottom << 10);
+    } break;
+    case 5: {
+      uint32_t x = state->draw_area.offset_x;
+      uint32_t y = state->draw_area.offset_y;
+      x &= 0x7FF;
+      y &= 0x7FF;
+
+      state->read_word = x | (y << 11);
+    } break;
+    case 7:
+      state->read_word = 2;
+      break;
+    case 8:
+      state->read_word = 0;
+      break;
+  }
+}
+
+void gp1(GpuState *state, uint32_t val) {
+  uint32_t opcode = val >> 24;
+
+  switch (opcode) {
+    case 0x00:
+      reset_gpu_state(state);
+      break;
+    case 0x01:
+      // ToDo: Implement reset_command_buffer
+      log_error("reset_command_buffer unimplemented!");
+      break;
+    case 0x03:
+      state->display_settings.disabled = val & 1;
+      break;
+    case 0x04:
+      state->dma_dir = val & 3;
+      break;
+    case 0x05:
+      state->display_settings.vram_start_x = val & 0x3FE;
+      state->display_settings.vram_start_y = (val >> 10) & 0x1FF;
+      break;
+    case 0x06:
+      state->display_settings.col_start = val & 0xFFF;
+      state->display_settings.col_end = (val >> 12) & 0xFFF;
+      break;
+    case 0x07:
+      state->display_settings.line_start = val & 0x3FF;
+      state->display_settings.line_end = (val >> 10) & 0x3FF;
+      break;
+    case 0x08:
+      set_hres_from_field(&state->display_settings, val);
+      state->display_settings.vres = ((val >> 2) & 1) ? 480 : 240;
+      state->display_settings.in_PAL_mode = (val >> 3) & 1;
+      state->display_settings.in_24_bit = (val >> 4) & 1;
+      state->display_settings.is_interlaced = (val >> 5) & 1;
+      state->display_settings.fixed_hres = (val >> 6) & 1;
+      break;
+    case 0x10:
+      gp1_get_info(state, val);
+    default:
+      fatal("Unimplemented GP1 Opcode: 0x%02X", opcode);
+  }
+}
+
 uint32_t load_gpu(Gpu *gpu, Addr addr, AddrType type) {
   if (type != AddrWord)
     fatal("Unhandled GPU Load: Addr: 0x%08X, Type: 0x%08X", addr.data, type);
@@ -54,7 +138,7 @@ uint32_t gpu_status(GpuState *state) {
   res |= state->draw_mode.tex_disabled << 15;
   res |= state->display_settings.fixed_hres << 16;
   uint8_t hres;
-  get_hres_field(&state->display_settings, &hres);
+  get_hres_from_field(&state->display_settings, &hres);
   res |= (hres & 0x3) << 17;
   res |= (state->display_settings.vres == 480) << 19;
   res |= state->display_settings.in_PAL_mode << 20;
