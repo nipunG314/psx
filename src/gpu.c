@@ -84,8 +84,8 @@ void gp1(GpuState *state, uint32_t val) {
       set_hres_from_field(&state->display_settings, val);
       state->display_settings.vres = ((val >> 2) & 1) ? 480 : 240;
       state->display_settings.in_PAL_mode = (val >> 3) & 1;
-      state->display_settings.in_24_bit = (val >> 4) & 1;
-      state->display_settings.is_interlaced = (val >> 5) & 1;
+      // state->display_settings.in_24_bit = (val >> 4) & 1;
+      // state->display_settings.is_interlaced = (val >> 5) & 1;
       state->display_settings.fixed_hres = (val >> 6) & 1;
       break;
     case 0x10:
@@ -142,8 +142,8 @@ uint32_t gpu_status(GpuState *state) {
   res |= (hres & 0x3) << 17;
   res |= (state->display_settings.vres == 480) << 19;
   res |= state->display_settings.in_PAL_mode << 20;
-  res |= state->display_settings.in_24_bit << 21;
-  res |= state->display_settings.is_interlaced << 22;
+  // res |= state->display_settings.in_24_bit << 21;
+  // res |= state->display_settings.is_interlaced << 22;
   res |= state->display_settings.disabled << 23;
   // ToDo: Fix DMA status bit when FIFO has been built
   res |= (state->dma_dir > 0) << 25;
