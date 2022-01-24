@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "fifo.h"
+#include "renderer.h"
 
 #ifndef GPU_H
 #define GPU_H
@@ -162,6 +163,7 @@ void reset_gpu_state(GpuState *state);
 typedef struct Gpu {
   GpuState state;
   CommandFifo fifo;
+  Renderer renderer;
 } Gpu;
 
 Gpu init_gpu();
@@ -174,6 +176,8 @@ void store_gpu(Gpu *gpu, Addr addr, uint32_t val, AddrType type);
 
 uint32_t gpu_status(GpuState *state);
 uint32_t gpu_read(GpuState *state);
+
+void destroy_gpu(Gpu *gpu);
 
 #endif
 

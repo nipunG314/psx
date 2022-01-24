@@ -8,6 +8,7 @@ Gpu init_gpu() {
 
   gpu.state = init_gpu_state();
   gpu.fifo = init_command_fifo();
+  gpu.renderer = init_renderer();
 
   return gpu;
 }
@@ -245,6 +246,10 @@ void reset_display(GpuDisplaySettings *display) {
   display->vram_start_x = 0;
   display->vram_start_y = 0;
   display->disabled = false;
+}
+
+void destroy_gpu(Gpu *gpu) {
+  destroy_renderer(&gpu->renderer);
 }
 
 /*
