@@ -158,7 +158,6 @@ typedef struct GpuState {
 } GpuState;
 
 GpuState init_gpu_state();
-void reset_gpu_state(GpuState *state);
 
 typedef struct Gpu {
   GpuState state;
@@ -167,9 +166,11 @@ typedef struct Gpu {
 } Gpu;
 
 Gpu init_gpu();
+void reset_gpu_state(Gpu *gpu);
+void reset_command_buffer(Gpu *gpu);
 
 void gp0(Gpu *gpu, uint32_t val);
-void gp1(GpuState *state, uint32_t val);
+void gp1(Gpu *gpu, uint32_t val);
 
 uint32_t load_gpu(Gpu *gpu, Addr addr, AddrType type);
 void store_gpu(Gpu *gpu, Addr addr, uint32_t val, AddrType type);

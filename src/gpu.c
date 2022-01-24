@@ -53,16 +53,16 @@ void gp1_get_info(GpuState *state, uint32_t val) {
   }
 }
 
-void gp1(GpuState *state, uint32_t val) {
+void gp1(Gpu *gpu, uint32_t val) {
   uint32_t opcode = val >> 24;
+  GpuState *state = &gpu->state;
 
   switch (opcode) {
     case 0x00:
-      reset_gpu_state(state);
+      reset_gpu_state(gpu);
       break;
     case 0x01:
-      // ToDo: Implement reset_command_buffer
-      log_error("reset_command_buffer unimplemented!");
+      reset_command_buffer(gpu);
       break;
     case 0x03:
       state->display_settings.disabled = val & 1;
@@ -166,12 +166,25 @@ uint32_t gpu_read(GpuState *state) {
 
 GpuState init_gpu_state() {
   GpuState state;
-  reset_gpu_state(&state);
+  state.draw_mode = init_draw_mode();
+  state.dma_dir = GpuDmaDirOff;
+  state.draw_area = init_draw_area();
+  state.tex_window = init_tex_window();
+  state.mask_settings.force_mask_bit = false;
+  state.mask_settings.preserve_masked_pixels = false;
+  state.display_settings = init_display();
+  state.read_word = 0;
 
   return state;
 }
 
-void reset_gpu_state(GpuState *state) {
+void reset_command_buffer(Gpu *gpu) {
+  command_fifo_clear(&gpu->fifo);
+}
+
+void reset_gpu_state(Gpu *gpu) {
+  GpuState *state = &gpu->state;
+
   state->draw_mode = init_draw_mode();
   state->dma_dir = GpuDmaDirOff;
   state->draw_area = init_draw_area();
@@ -180,6 +193,8 @@ void reset_gpu_state(GpuState *state) {
   state->mask_settings.preserve_masked_pixels = false;
   state->display_settings = init_display();
   state->read_word = 0;
+
+  reset_command_buffer(gpu);
 }
 
 GpuDrawMode init_draw_mode() {

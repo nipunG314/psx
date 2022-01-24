@@ -61,7 +61,7 @@ static inline uint32_t command_fifo_peak(CommandFifo *fifo) {
   return fifo->buffer[fifo->read_index % SOFT_COMMAND_FIFO_DEPTH];
 }
 
-static inline void clear(CommandFifo *fifo) {
+static inline void command_fifo_clear(CommandFifo *fifo) {
   fifo->read_index = fifo->write_index;
 }
 
