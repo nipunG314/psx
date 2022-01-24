@@ -2,6 +2,7 @@
 #include <stdbool.h>
 
 #include "types.h"
+#include "fifo.h"
 
 #ifndef GPU_H
 #define GPU_H
@@ -160,6 +161,7 @@ void reset_gpu_state(GpuState *state);
 
 typedef struct Gpu {
   GpuState state;
+  CommandFifo fifo;
 } Gpu;
 
 Gpu init_gpu();

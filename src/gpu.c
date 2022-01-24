@@ -7,6 +7,7 @@ Gpu init_gpu() {
   Gpu gpu;
 
   gpu.state = init_gpu_state();
+  gpu.fifo = init_command_fifo();
 
   return gpu;
 }
