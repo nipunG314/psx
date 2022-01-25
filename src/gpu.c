@@ -197,6 +197,21 @@ void reset_gpu_state(Gpu *gpu) {
   reset_command_buffer(gpu);
 }
 
+GpuTime init_gpu_time() {
+  GpuTime time;
+  time.gpu_draw_cycles = MAKE_Cycles(0);
+  time.fractional_cycles = 0;
+  time.cycles_to_hsync = MAKE_Cycles(3412 - 200);
+  time.in_hsync = false;
+  time.cur_line = 0;
+  time.cur_line_vram_offset = 0;
+  time.cur_line_vram_y = 0;
+  time.line_phase = true;
+  time.frame_finished = false;
+
+  return time;
+}
+
 GpuDrawMode init_draw_mode() {
   GpuDrawMode mode;
   reset_draw_mode(&mode);

@@ -6,6 +6,8 @@
 #ifndef CPU_H
 #define CPU_H
 
+#define CPU_FREQ 33868800
+
 typedef struct Psx Psx;
 
 typedef void (*OpFunc)(Psx *, Ins);

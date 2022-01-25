@@ -8,6 +8,10 @@
 #ifndef GPU_H
 #define GPU_H
 
+#define GPU_CYCLES_FRACTIONAL_POWER 65536
+#define GPU_CYCLES_NTSC 103896
+#define GPU_CYCLES_PAL 102948
+
 // GpuState defines the set GPU parameters
 // sent by the PS1 on the the actual GPU.
 // It doesn't encompass all state variables
@@ -159,10 +163,36 @@ typedef struct GpuState {
 
 GpuState init_gpu_state();
 
+typedef struct GpuTime {
+  Cycles gpu_draw_cycles;
+  uint16_t fractional_cycles;
+  bool in_hsync;
+  Cycles cycles_to_hsync;
+  uint16_t cur_line;
+  uint16_t cur_line_vram_offset; // relative to display.vram_start_y
+  uint16_t cur_line_vram_y;
+  bool line_phase;
+  bool frame_finished;
+} GpuTime;
+
+GpuTime init_gpu_time();
+
+static inline void gpu_add_time(GpuTime *time, Cycles cycles) {
+  time->gpu_draw_cycles.data += cycles.data << 1;
+
+  if (time->gpu_draw_cycles.data > 256)
+    time->gpu_draw_cycles.data = 256;
+}
+
+static inline void gpu_consume_time(GpuTime *time, Cycles cycles) {
+  time->gpu_draw_cycles.data -= cycles.data;
+}
+
 typedef struct Gpu {
   GpuState state;
   CommandFifo fifo;
   Renderer renderer;
+  GpuTime gpu_time;
 } Gpu;
 
 Gpu init_gpu();
@@ -177,6 +207,13 @@ void store_gpu(Gpu *gpu, Addr addr, uint32_t val, AddrType type);
 
 uint32_t gpu_status(GpuState *state);
 uint32_t gpu_read(GpuState *state);
+
+static inline Cycles gpu_tick(Gpu *gpu, Cycles cpu_cycles) {
+  uint64_t gpu_cycles_ratio = gpu->state.display_settings.in_PAL_mode ? GPU_CYCLES_PAL : GPU_CYCLES_NTSC;
+  uint64_t gpu_cycles = gpu->gpu_time.fractional_cycles + gpu_cycles_ratio * cpu_cycles.data;
+  gpu->gpu_time.fractional_cycles = gpu_cycles % GPU_CYCLES_FRACTIONAL_POWER;
+  return MAKE_Cycles(gpu_cycles / GPU_CYCLES_FRACTIONAL_POWER);
+}
 
 void destroy_gpu(Gpu *gpu);
 
