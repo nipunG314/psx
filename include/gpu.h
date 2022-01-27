@@ -163,6 +163,27 @@ typedef struct GpuState {
 
 GpuState init_gpu_state();
 
+typedef struct Gpu Gpu;
+
+typedef void (*Gp0Func)(Gpu *gpu);
+
+typedef struct Gp0Command {
+  Gp0Func handler;
+  uint8_t len;
+  uint8_t fifo_overhead;
+  bool out_of_fifo;
+} Gp0Command;
+
+#define MAKE_Gp0Command(handler, len, fifo_overhead, out_of_fifo)\
+{\
+  handler,\
+  len,\
+  fifo_overhead,\
+  out_of_fifo\
+}
+
+extern Gp0Command const gp0_handlers[0x100];
+
 typedef struct GpuTime {
   Cycles gpu_draw_cycles;
   uint16_t fractional_cycles;
