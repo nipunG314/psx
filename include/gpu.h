@@ -248,6 +248,18 @@ static inline Cycles gpu_tick(Gpu *gpu, Cycles cpu_cycles) {
   return MAKE_Cycles(gpu_cycles / GPU_CYCLES_FRACTIONAL_POWER);
 }
 
+static inline uint16_t gpu_get_line_length(Gpu *gpu) {
+  if (gpu->state.display_settings.in_PAL_mode)
+    return 3405;
+  return 3412 + gpu->gpu_time.line_phase;
+}
+
+static inline uint16_t gpu_get_lines_per_field(Gpu *gpu) {
+   if (gpu->state.display_settings.in_PAL_mode)
+    return 314;
+  return 263;
+}
+
 void destroy_gpu(Gpu *gpu);
 
 #endif
