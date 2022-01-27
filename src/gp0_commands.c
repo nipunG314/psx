@@ -10,7 +10,7 @@ void gp0_cmd_unimplemented(Gpu *gpu) {
   fatal("GP0 Command unimplemented: Opcode: 0x%02X, Command: 0x%08X", ins >> 24, ins);
 }
 
-Gp0Command const gp0_handlers[0x100] = {
+Gp0Command const gp0_commands[0x100] = {
   // 0x00
   MAKE_Gp0Command(gp0_cmd_nop, 1, 1, true),
   MAKE_Gp0Command(gp0_cmd_unimplemented, 1, 1, false),

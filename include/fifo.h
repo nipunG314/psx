@@ -54,9 +54,9 @@ static inline uint32_t command_fifo_pop(CommandFifo *fifo) {
   return fifo->buffer[read_index];
 }
 
-static inline uint32_t command_fifo_peak(CommandFifo *fifo) {
+static inline uint32_t command_fifo_peek(CommandFifo *fifo) {
   if (command_fifo_empty(fifo))
-    fatal("Attempting to peak from empty GP0 fifo");
+    fatal("Attempting to peek from empty GP0 fifo");
 
   return fifo->buffer[fifo->read_index % SOFT_COMMAND_FIFO_DEPTH];
 }

@@ -13,6 +13,46 @@ Gpu init_gpu() {
   return gpu;
 }
 
+void gp0(Gpu *gpu, uint32_t val) {
+  if (push_command_fifo(&gpu->fifo, val))
+    execute_command(gpu);
+}
+
+bool push_command_fifo(CommandFifo *fifo, uint32_t val) {
+  uint8_t fifo_len = command_fifo_len(fifo);
+
+  if (fifo_len >= HARD_COMMAND_FIFO_DEPTH) {
+    Gp0Command next_command;
+    get_next_fifo_command(fifo, &next_command);
+
+    if ((fifo_len - next_command.fifo_overhead) >= HARD_COMMAND_FIFO_DEPTH) {
+      log_error("GPU FIFO full. Command Dropped: 0x%08X", next_command);
+      return false;
+    }
+  }
+
+  command_fifo_push(fifo, val);
+  return true;
+}
+
+void execute_command(Gpu *gpu) {
+  Gp0Command next_command;
+  if (!get_next_fifo_command(&gpu->fifo, &next_command))
+    return;
+  uint8_t fifo_len = command_fifo_len(&gpu->fifo);
+
+  if (next_command.len > fifo_len)
+    return;
+
+  if (!next_command.out_of_fifo) {
+    if (gpu->gpu_time.gpu_draw_cycles.data < 0)
+      return;
+    gpu_consume_time(&gpu->gpu_time, MAKE_Cycles(2));
+  }
+
+  next_command.handler(gpu);
+}
+
 void gp1_get_info(GpuState *state, uint32_t val) {
   switch (val & 0xF) {
     case 2: {

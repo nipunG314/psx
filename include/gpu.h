@@ -182,7 +182,16 @@ typedef struct Gp0Command {
   out_of_fifo\
 }
 
-extern Gp0Command const gp0_handlers[0x100];
+extern Gp0Command const gp0_commands[0x100];
+
+static inline bool get_next_fifo_command(CommandFifo *fifo, Gp0Command *command) {
+  if (command_fifo_empty(fifo))
+      return false;
+
+  uint32_t next_command = command_fifo_pop(fifo);
+  *command = gp0_commands[next_command >> 24];
+  return true;
+}
 
 typedef struct GpuTime {
   Cycles gpu_draw_cycles;
@@ -219,6 +228,9 @@ typedef struct Gpu {
 Gpu init_gpu();
 void reset_gpu_state(Gpu *gpu);
 void reset_command_buffer(Gpu *gpu);
+
+bool push_command_fifo(CommandFifo *fifo, uint32_t val);
+void execute_command(Gpu *gpu);
 
 void gp0(Gpu *gpu, uint32_t val);
 void gp1(Gpu *gpu, uint32_t val);
