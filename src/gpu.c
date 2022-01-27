@@ -220,6 +220,8 @@ GpuState init_gpu_state() {
 
 void reset_command_buffer(Gpu *gpu) {
   command_fifo_clear(&gpu->fifo);
+  if (gpu->gpu_time.gpu_draw_cycles.data < 0)
+    gpu->gpu_time.gpu_draw_cycles = MAKE_Cycles(0);
 }
 
 void reset_gpu_state(Gpu *gpu) {
