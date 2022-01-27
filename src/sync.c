@@ -3,6 +3,7 @@
 
 #include "psx.h"
 #include "sync.h"
+#include "log.h"
 
 Synchronizer init_synchronizer() {
   Synchronizer sync;
@@ -43,8 +44,34 @@ void handle_events(Psx *psx) {
     int32_t delta = psx->cycles_counter.data - psx->sync.first_event.data;
     psx->cycles_counter.data -= delta;
     
-    if (psx->sync.first_event.data >= psx->sync.next_sync[Dma].data) {
+    if (psx->sync.first_event.data >= psx->sync.next_sync[SyncDma].data) {
       // ToDo: Run DMA
+      log_error("dma_run unimplemented!");
+    }
+
+    if (psx->sync.first_event.data >= psx->sync.next_sync[SyncGpu].data) {
+      // ToDo: Run GPU
+      log_error("dma_run unimplemented!");
+    }
+
+    if (psx->sync.first_event.data >= psx->sync.next_sync[SyncTimers].data) {
+      // ToDo: Run Timers
+      log_error("dma_run unimplemented!");
+    }
+
+    if (psx->sync.first_event.data >= psx->sync.next_sync[SyncPadMemCard].data) {
+      // ToDo: Run PadMemCard
+      log_error("dma_run unimplemented!");
+    }
+
+    if (psx->sync.first_event.data >= psx->sync.next_sync[SyncCdRom].data) {
+      // ToDo: Run CdRom
+      log_error("dma_run unimplemented!");
+    }
+
+    if (psx->sync.first_event.data >= psx->sync.next_sync[SyncSpu].data) {
+      // ToDo: Run Spu
+      log_error("dma_run unimplemented!");
     }
 
     psx->cycles_counter.data += delta;

@@ -8,7 +8,12 @@
 typedef struct Psx Psx;
 
 typedef enum SyncToken {
-  Dma,
+  SyncDma,
+  SyncGpu,
+  SyncTimers,
+  SyncPadMemCard,
+  SyncCdRom,
+  SyncSpu,
   SyncTokenCount
 } SyncToken;
 
