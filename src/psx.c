@@ -50,6 +50,7 @@ Psx init_psx(char const *bios_file_path) {
   psx.sync = init_synchronizer();
   psx.cpu = init_cpu();
   psx.cop0 = init_cop0();
+  psx.timers = init_timers();
 
   return psx;
 }

@@ -7,6 +7,7 @@
 #include "irq.h"
 #include "cpu.h"
 #include "cop0.h"
+#include "timers.h"
 
 #ifndef PSX_H
 #define PSX_H
@@ -32,6 +33,7 @@ typedef struct Psx {
   IrqState irq;
   Cpu cpu;
   Cop0 cop0;
+  Timers timers;
 } Psx;
 
 Psx init_psx(char const *bios_file_path);

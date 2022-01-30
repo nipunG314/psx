@@ -4,6 +4,7 @@
 
 #include "types.h"
 #include "irq.h"
+#include "psx.h"
 
 #ifndef TIMERS_H
 #define TIMERS_H
@@ -91,6 +92,10 @@ static inline void set_timer_counter(Timer *timer, uint16_t val) {
   timer->irq_disable = false;
 }
 
+static inline ClockSource get_timer_clock(Timer *timer, size_t timer_index) {
+  return timer_clock_source[timer_index][timer->mode.clock_source_config & 3];
+}
+
 static inline SyncMode get_timer_sync_mode(Timer *timer, size_t timer_index) {
   if (!timer->mode.sync_enable)
     return FreeRun;
@@ -114,7 +119,7 @@ static inline uint16_t read_timer_mode(Timer *timer) {
 
 bool handle_target_match(Timer *timer);
 bool handle_overflow_match(Timer *timer);
-bool next_irq(Timer *timer, Cycles *next_irq_delta, size_t timer_index);
+bool next_timer_irq(Timer *timer, Cycles *next_irq_delta, size_t timer_index);
 bool run_timer(Timer *timer, Cycles cycles);
 
 static SyncState sync_mode_sync_state_lut[SyncModeCount][4] = {
@@ -139,6 +144,39 @@ static inline void refresh_timer_sync(Timer *timer, bool in_hsync, bool in_vsync
     return;
 
   timer->sync_state = sync_mode_sync_state_lut[sync_mode][2 * in_vsync + in_hsync];
+}
+
+typedef struct Timers {
+  Timer timers[3];
+  bool in_hsync;
+  bool in_vsync;
+  Cycles divider_8;
+} Timers;
+
+Timers init_timers();
+
+uint32_t load_timers(Psx *psx, Addr offset, AddrType type);
+void store_timers(Psx *psx, Addr offset, uint32_t val, AddrType type);
+
+bool next_irq(Timers *timers, Cycles *next_irq_delta);
+bool run_cpu(Timers *timers, Cycles cycle_count, size_t timer_index);
+void run_timers_helper(Psx *psx);
+
+static inline void predict_next_sync(Psx *psx) {
+  Cycles delta;
+  if (!next_irq(&psx->timers, &delta))
+    delta.data = 0x10000;
+  set_next_event(psx, SyncTimers, delta); 
+}
+
+static inline void run_timers(Psx *psx) {
+  run_timers_helper(psx);
+  predict_next_sync(psx);
+}
+
+static inline void refresh_sync(Timers *timers) {
+  for(size_t timer_index = 0; timer_index < 3; timer_index++)
+    refresh_timer_sync(timers->timers + timer_index, timers->in_hsync, timers->in_vsync, timer_index);
 }
 
 #endif
