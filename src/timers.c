@@ -106,6 +106,68 @@ void run_timers_helper(Psx *psx) {
   }
 }
 
+void set_hsync(Psx *psx, bool entered_hsync) {
+  run_timers_helper(psx);
+
+  // Set hsync
+  psx->timers.in_hsync = entered_hsync;
+  refresh_sync(&psx->timers);
+
+  if (entered_hsync && psx->timers.sync_state == SyncWaitingForStart)
+    psx->timers.sync_state = SyncWaitingForEnd;
+  else
+    psx->timers.sync_state = SyncRunning;
+
+  // Update Timer0
+  Timer *timer = psx->timers.timers;
+
+  SyncMode sync_mode = get_timer_sync_mode(timer, 0);
+  bool reset_timer0 = entered_hsync * (sync_mode == ResetOnHSync) + !entered_hsync * (sync_mode == HSyncOnly);
+
+  if (reset_timer0) {
+    timer->counter = MAKE_Cycles(0);
+
+    if (timer_target_match(timer) && handle_target_match(timer))
+      trigger(psx, timer_irq[0]);
+  }
+
+  // Count number of hsyncs using Timer1
+  timer++;
+  ClockSource source = get_timer_clock(timer, 1);
+  if (entered_hsync && (source == GpuHSyncClock) && run_timer(timer, MAKE_Cycles(1)))
+    trigger(psx, timer_irq[1]);
+
+  predict_next_sync(psx);
+}
+
+void set_vsync(Psx *psx, bool entered_vsync) {
+  run_timers_helper(psx);
+
+  // Set vsync
+  psx->timers.in_vsync = entered_vsync;
+  refresh_sync(&psx->timers);
+
+  if (entered_vsync && psx->timers.sync_state == SyncWaitingForStart)
+    psx->timers.sync_state = SyncWaitingForEnd;
+  else
+    psx->timers.sync_state = SyncRunning;
+
+  // Update Timer1
+  Timer *timer = psx->timers.timers + 1;
+
+  SyncMode sync_mode = get_timer_sync_mode(timer, 1);
+  bool reset_timer1 = entered_vsync * (sync_mode == ResetOnVSync) + !entered_vsync * (sync_mode == VSyncOnly);
+
+  if (reset_timer1) {
+    timer->counter = MAKE_Cycles(0);
+
+    if (timer_target_match(timer) && handle_target_match(timer))
+      trigger(psx, timer_irq[1]);
+  }
+
+  predict_next_sync(psx);
+}
+
 Timer init_timer() {
   Timer timer;
 

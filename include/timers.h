@@ -161,6 +161,8 @@ void store_timers(Psx *psx, Addr offset, uint32_t val, AddrType type);
 bool next_irq(Timers *timers, Cycles *next_irq_delta);
 bool run_cpu(Timers *timers, Cycles cycle_count, size_t timer_index);
 void run_timers_helper(Psx *psx);
+void set_hsync(Psx *psx, bool entered_hsync);
+void set_vsync(Psx *psx, bool entered_vsync);
 
 static inline void predict_next_sync(Psx *psx) {
   Cycles delta;
