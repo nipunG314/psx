@@ -218,6 +218,8 @@ static inline void gpu_consume_time(GpuTime *time, Cycles cycles) {
   time->gpu_draw_cycles.data -= cycles.data;
 }
 
+typedef struct Psx Psx;
+
 typedef struct Gpu {
   GpuState state;
   CommandFifo fifo;
@@ -228,6 +230,8 @@ typedef struct Gpu {
 Gpu init_gpu();
 void reset_gpu_state(Gpu *gpu);
 void reset_command_buffer(Gpu *gpu);
+
+void run_gpu(Psx *psx);
 
 bool push_command_fifo(CommandFifo *fifo, uint32_t val);
 void execute_command(Gpu *gpu);

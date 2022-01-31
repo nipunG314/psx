@@ -4,12 +4,11 @@
 
 #include "types.h"
 #include "irq.h"
-#include "psx.h"
 
 #ifndef TIMERS_H
 #define TIMERS_H
 
-static Irq timer_irq[] = {
+static Irq const timer_irq[] = {
   Timer0Interrupt,
   Timer1Interrupt,
   Timer2Interrupt
@@ -29,7 +28,7 @@ typedef enum SyncMode {
   SyncModeCount
 } SyncMode;
 
-static SyncMode timer_sync_modes[3][4] = {
+static SyncMode const timer_sync_modes[3][4] = {
   { PauseOnHSync, ResetOnHSync, HSyncOnly, FreeRunAfterHSync },
   { PauseOnVSync, ResetOnVSync, VSyncOnly, FreeRunAfterVSync },
   { Stopped, FreeRun, Stopped, FreeRun }
@@ -42,7 +41,7 @@ typedef enum ClockSource {
   SystemClock8,
 } ClockSource;
 
-static ClockSource timer_clock_source[3][4] = {
+static ClockSource const timer_clock_source[3][4] = {
   { SystemClock, GpuDotClock, SystemClock, GpuDotClock },
   { SystemClock, GpuHSyncClock, SystemClock, GpuHSyncClock },
   { SystemClock, SystemClock, SystemClock8, SystemClock8 },
@@ -155,6 +154,8 @@ typedef struct Timers {
 
 Timers init_timers();
 
+typedef struct Psx Psx;
+
 uint32_t load_timers(Psx *psx, Addr offset, AddrType type);
 void store_timers(Psx *psx, Addr offset, uint32_t val, AddrType type);
 
@@ -163,13 +164,7 @@ bool run_cpu(Timers *timers, Cycles cycle_count, size_t timer_index);
 void run_timers_helper(Psx *psx);
 void set_hsync(Psx *psx, bool entered_hsync);
 void set_vsync(Psx *psx, bool entered_vsync);
-
-static inline void predict_next_sync(Psx *psx) {
-  Cycles delta;
-  if (!next_irq(&psx->timers, &delta))
-    delta.data = 0x10000;
-  set_next_event(psx, SyncTimers, delta); 
-}
+void predict_next_sync(Psx *psx);
 
 static inline void run_timers(Psx *psx) {
   run_timers_helper(psx);

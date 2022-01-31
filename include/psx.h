@@ -8,6 +8,7 @@
 #include "cpu.h"
 #include "cop0.h"
 #include "timers.h"
+#include "gpu.h"
 
 #ifndef PSX_H
 #define PSX_H
@@ -34,6 +35,7 @@ typedef struct Psx {
   Cpu cpu;
   Cop0 cop0;
   Timers timers;
+  Gpu gpu;
 } Psx;
 
 Psx init_psx(char const *bios_file_path);

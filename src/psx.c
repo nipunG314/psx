@@ -51,6 +51,7 @@ Psx init_psx(char const *bios_file_path) {
   psx.cpu = init_cpu();
   psx.cop0 = init_cop0();
   psx.timers = init_timers();
+  psx.gpu = init_gpu();
 
   return psx;
 }

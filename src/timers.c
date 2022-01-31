@@ -1,6 +1,7 @@
 #include <math.h>
 
 #include "timers.h"
+#include "psx.h"
 #include "log.h"
 
 Timers init_timers() {
@@ -18,7 +19,7 @@ Timers init_timers() {
 uint32_t load_timers(Psx *psx, Addr offset, AddrType type) {
   run_timers(psx);
 
-  Timer *timer = psx->timers.timers + (offset.data >> 4) & 0xF;
+  Timer *timer = psx->timers.timers + ((offset.data >> 4) & 0xF);
 
   switch (offset.data & 0xF) {
     case 0:
@@ -35,7 +36,7 @@ uint32_t load_timers(Psx *psx, Addr offset, AddrType type) {
 void store_timers(Psx *psx, Addr offset, uint32_t val, AddrType type) {
   run_timers(psx);
 
-  Timer *timer = psx->timers.timers + (offset.data >> 4) & 0xF;
+  Timer *timer = psx->timers.timers + ((offset.data >> 4) & 0xF);
 
   switch (offset.data & 0xF) {
     case 0:
@@ -54,7 +55,7 @@ void store_timers(Psx *psx, Addr offset, uint32_t val, AddrType type) {
   if (timer_target_match(timer) && handle_target_match(timer))
     trigger(psx, timer_irq[(offset.data >> 4) & 0xF]);
 
-  predict_next_sync(&psx->timers);
+  predict_next_sync(psx);
 }
 
 bool next_irq(Timers *timers, Cycles *next_irq_delta) {
@@ -113,13 +114,13 @@ void set_hsync(Psx *psx, bool entered_hsync) {
   psx->timers.in_hsync = entered_hsync;
   refresh_sync(&psx->timers);
 
-  if (entered_hsync && psx->timers.sync_state == SyncWaitingForStart)
-    psx->timers.sync_state = SyncWaitingForEnd;
-  else
-    psx->timers.sync_state = SyncRunning;
-
   // Update Timer0
   Timer *timer = psx->timers.timers;
+
+  if (entered_hsync && timer->sync_state == SyncWaitingForStart)
+    timer->sync_state = SyncWaitingForEnd;
+  else
+    timer->sync_state = SyncRunning;
 
   SyncMode sync_mode = get_timer_sync_mode(timer, 0);
   bool reset_timer0 = entered_hsync * (sync_mode == ResetOnHSync) + !entered_hsync * (sync_mode == HSyncOnly);
@@ -147,13 +148,13 @@ void set_vsync(Psx *psx, bool entered_vsync) {
   psx->timers.in_vsync = entered_vsync;
   refresh_sync(&psx->timers);
 
-  if (entered_vsync && psx->timers.sync_state == SyncWaitingForStart)
-    psx->timers.sync_state = SyncWaitingForEnd;
-  else
-    psx->timers.sync_state = SyncRunning;
-
   // Update Timer1
   Timer *timer = psx->timers.timers + 1;
+
+  if (entered_vsync && timer->sync_state == SyncWaitingForStart)
+    timer->sync_state = SyncWaitingForEnd;
+  else
+    timer->sync_state = SyncRunning;
 
   SyncMode sync_mode = get_timer_sync_mode(timer, 1);
   bool reset_timer1 = entered_vsync * (sync_mode == ResetOnVSync) + !entered_vsync * (sync_mode == VSyncOnly);
@@ -167,6 +168,14 @@ void set_vsync(Psx *psx, bool entered_vsync) {
 
   predict_next_sync(psx);
 }
+
+void predict_next_sync(Psx *psx) {
+  Cycles delta;
+  if (!next_irq(&psx->timers, &delta))
+    delta.data = 0x10000;
+  set_next_event(psx, SyncTimers, delta);
+}
+
 
 Timer init_timer() {
   Timer timer;
