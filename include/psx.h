@@ -28,6 +28,7 @@ typedef struct RomHeader {
 typedef struct Psx {
   Cycles cycles_counter;
   Cycles dma_timing_penalty;
+  bool frame_done;
   Bios bios; 
   Ram ram;
   Synchronizer sync;

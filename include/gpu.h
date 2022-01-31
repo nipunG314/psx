@@ -11,6 +11,7 @@
 #define GPU_CYCLES_FRACTIONAL_POWER 65536
 #define GPU_CYCLES_NTSC 103896
 #define GPU_CYCLES_PAL 102948
+#define HSYNC_LEN_CYCLES 200
 
 // GpuState defines the set GPU parameters
 // sent by the PS1 on the the actual GPU.

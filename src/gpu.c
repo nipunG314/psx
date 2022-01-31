@@ -1,6 +1,8 @@
 #include <stdlib.h>
 
 #include "gpu.h"
+#include "psx.h"
+#include "sync.h"
 #include "log.h"
 
 Gpu init_gpu() {
@@ -11,6 +13,109 @@ Gpu init_gpu() {
   gpu.renderer = init_renderer();
 
   return gpu;
+}
+
+void handle_end_of_line(Psx *psx) {
+  bool eof = false;
+  GpuTime *gpu_time = &psx->gpu.gpu_time;
+  GpuDisplaySettings *gpu_display = &psx->gpu.state.display_settings;
+  uint16_t lines_per_field = gpu_get_lines_per_field(&psx->gpu);
+
+  // ToDo: Flush the renderer's command buffer
+  // Setup new line
+  gpu_time->line_phase = !gpu_time->line_phase;
+  gpu_time->cur_line = (gpu_time->cur_line + 1) % lines_per_field;
+  psx->gpu.gpu_time.cycles_to_hsync = MAKE_Cycles(HSYNC_LEN_CYCLES);
+
+  // Handle current line
+  if (!gpu_time->frame_finished) {
+    uint16_t draw_line = gpu_display->in_PAL_mode ? 308 : 256;
+    eof |= gpu_time->cur_line == draw_line;
+  }
+
+  if ((gpu_time->cur_line == lines_per_field - 1) && !gpu_time->frame_finished) {
+    eof = true;
+  } else if (gpu_time->cur_line == 0) {
+    gpu_time->frame_finished = false;
+    lines_per_field = gpu_get_lines_per_field(&psx->gpu);
+  }
+
+  // Leaving Active Display Area
+  // Trigger Vblank
+  if ((gpu_time->cur_line == gpu_display->line_end) && gpu_display->active) {
+    gpu_display->active = false;
+    gpu_time->cur_line_vram_offset = 0;
+
+    trigger(psx, VblankInterrupt);
+    set_vsync(psx, true);
+
+    if (!gpu_time->frame_finished) {
+      uint16_t line_min = gpu_display->in_PAL_mode ? 260 : 232;
+      eof |= line_min;
+    }
+  }
+
+  // Entering Active Display Area
+  if ((gpu_time->cur_line == gpu_display->line_start) && !gpu_display->active) {
+    gpu_display->active = true;
+    set_vsync(psx, false);
+  }
+
+  // Update current VRAM Line
+  gpu_time->cur_line_vram_y = (gpu_display->vram_start_y + gpu_time->cur_line_vram_offset) % 512;
+
+  if (eof)
+    psx->frame_done = gpu_time->frame_finished = true;
+
+  if (gpu_display->active)
+    gpu_time->cur_line_vram_offset++;
+}
+
+void run_gpu(Psx *psx) {
+  Cycles elapsed = resync(psx, SyncGpu);
+
+  gpu_add_time(&psx->gpu.gpu_time, elapsed);
+
+  // ToDo: Replace execute_command when VRAM
+  // operations are implemented
+  execute_command(&psx->gpu);
+
+  Cycles elapsed_gpu = gpu_tick(&psx->gpu, elapsed);
+
+  // Run Gpu Clock
+  Timer *timer = psx->timers.timers;
+  ClockSource source = get_timer_clock(timer, 0);
+  if (source == GpuDotClock && run_timer(timer, elapsed_gpu))
+    trigger(psx, timer_irq[0]);
+
+  // Process hsyncs
+  GpuTime *gpu_time = &psx->gpu.gpu_time;
+  while (elapsed_gpu.data >= gpu_time->cycles_to_hsync.data) {
+    elapsed_gpu.data -= gpu_time->cycles_to_hsync.data;
+    gpu_time->in_hsync = !gpu_time->in_hsync;
+    set_hsync(psx, gpu_time->in_hsync);
+
+    if (!gpu_time->in_hsync)
+      handle_end_of_line(psx);
+    else
+      gpu_time->cycles_to_hsync = MAKE_Cycles(HSYNC_LEN_CYCLES);
+  }
+
+  gpu_time->cycles_to_hsync.data -= elapsed_gpu.data;
+
+  // Calculate date of next hsync even
+  uint64_t delta = gpu_time->cycles_to_hsync.data;
+  delta *= GPU_CYCLES_FRACTIONAL_POWER;
+  delta -= gpu_time->fractional_cycles;
+  uint64_t gpu_cycles_ratio = psx->gpu.state.display_settings.in_PAL_mode ? GPU_CYCLES_PAL : GPU_CYCLES_NTSC;
+
+  delta = (delta + gpu_cycles_ratio - 1) / gpu_cycles_ratio;
+  if (delta < 1)
+    delta = 1;
+  else if (delta > 128)
+    delta = 128;
+
+  set_next_event(psx, SyncGpu, MAKE_Cycles(delta));
 }
 
 void gp0(Gpu *gpu, uint32_t val) {
