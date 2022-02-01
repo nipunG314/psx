@@ -44,9 +44,11 @@ Psx init_psx(char const *bios_file_path) {
 
   psx.cycles_counter = MAKE_Cycles(0);
   psx.dma_timing_penalty = MAKE_Cycles(0);
+  psx.cpu_stalled = false;
   psx.frame_done = false;
   psx.bios = init_bios(bios_file_path); 
   psx.ram = init_ram();
+  psx.dma = init_dma();
   psx.irq = init_irq();
   psx.sync = init_synchronizer();
   psx.cpu = init_cpu();
@@ -61,7 +63,6 @@ uint32_t load(Psx *psx, Addr addr, AddrType type) {
   addr = mask_region(addr);
 
   tick(psx, psx->dma_timing_penalty);
-  psx->dma_timing_penalty.data = 0;
 
   int32_t offset = range_contains(range(BIOS), addr);
   if (offset >= 0) {

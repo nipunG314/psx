@@ -3,6 +3,7 @@
 #include "types.h"
 #include "bios.h"
 #include "ram.h"
+#include "dma.h"
 #include "sync.h"
 #include "irq.h"
 #include "cpu.h"
@@ -28,9 +29,11 @@ typedef struct RomHeader {
 typedef struct Psx {
   Cycles cycles_counter;
   Cycles dma_timing_penalty;
+  bool cpu_stalled;
   bool frame_done;
   Bios bios; 
   Ram ram;
+  Dma dma;
   Synchronizer sync;
   IrqState irq;
   Cpu cpu;

@@ -243,6 +243,22 @@ void gp1(Gpu *gpu, uint32_t val);
 uint32_t load_gpu(Gpu *gpu, Addr addr, AddrType type);
 void store_gpu(Gpu *gpu, Addr addr, uint32_t val, AddrType type);
 
+static inline bool gpu_dma_write(Gpu *gpu) {
+  CommandFifo *fifo = &gpu->fifo;
+
+  if (command_fifo_empty(fifo))
+    return true;
+
+  // ToDo: Check for ongoing VRAM reads and copies
+
+  Gp0Command command;
+  get_next_fifo_command(fifo, &command);
+  if (command_fifo_len(fifo) >= command.fifo_overhead)
+    return false;
+
+  return true;
+}
+
 uint32_t gpu_status(GpuState *state);
 uint32_t gpu_read(GpuState *state);
 
